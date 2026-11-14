@@ -1,0 +1,104 @@
+<!-- Page Header -->
+<div class="page-header">
+  <div>
+    <h1>Reports</h1>
+    <p class="subtitle">Understand appointment trends and clinic performance.</p>
+  </div>
+  <button class="btn-primary">Export report</button>
+</div>
+
+<!-- Filter Bar -->
+<div class="filter-bar">
+  <select class="filter-select"><option>01 – 30 Nov 2026</option></select>
+  <select class="filter-select"><option>All doctors</option></select>
+  <select class="filter-select"><option>All specialities</option></select>
+</div>
+
+<!-- 1. Stat Cards -->
+<div class="stats-grid">
+  <div class="stat-card" *ngFor="let stat of statCards">
+    <span class="stat-label">{{ stat.label }}</span>
+    <div class="stat-value">{{ stat.value }}</div>
+  </div>
+</div>
+
+<!-- Charts Row -->
+<div class="charts-grid">
+  
+  <!-- Bar Chart Container -->
+  <div class="chart-card">
+    <div class="chart-header">
+      <div>
+        <h2>Appointments by day</h2>
+        <p class="chart-subtitle">1–10 November 2026 · 248 appointments</p>
+      </div>
+    </div>
+    
+    <div class="bar-chart-wrapper">
+      <!-- Y-axis -->
+      <div class="y-axis">
+        <span>40</span>
+        <span>30</span>
+        <span>20</span>
+        <span>10</span>
+        <span>0</span>
+      </div>
+      <!-- Bars -->
+      <div class="bars-container">
+        <div class="bar-group" *ngFor="let bar of barChartData">
+          <div class="bar" [style.height]="bar.height"></div>
+          <span class="x-label">{{ bar.day }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Status Breakdown Container -->
+  <div class="chart-card">
+    <div class="chart-header">
+      <h2>Appointment status</h2>
+    </div>
+    <div class="status-list">
+      <div class="status-row" *ngFor="let status of statusData">
+        <div class="status-info">
+          <span class="status-label">{{ status.label }}</span>
+          <span class="status-count">{{ status.count }}</span>
+          <span class="status-percent">{{ status.percent }}</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" [style.width]="status.percent" [style.background-color]="status.color"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Summary by Doctor Table -->
+<div class="section-container">
+  <div class="section-header">
+    <h2>Summary by doctor</h2>
+  </div>
+  <div class="table-wrapper">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>DOCTOR</th>
+          <th>TOTAL</th>
+          <th>COMPLETED</th>
+          <th>APPROVED</th>
+          <th>OTHER STATUSES</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let doc of doctorsSummary">
+          <td class="font-medium">{{ doc.doctor }}</td>
+          <td>{{ doc.total }}</td>
+          <td>{{ doc.completed }}</td>
+          <td>{{ doc.approved }}</td>
+          <td>{{ doc.other }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

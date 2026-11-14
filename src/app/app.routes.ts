@@ -57,6 +57,14 @@ export const routes: Routes = [
       {
         path: 'schedules',
         loadComponent: () => import('./adminpages/schedules/schedules').then(m => m.Schedules)
+      },
+      {
+        path: 'reports',
+        loadComponent: () => import('./adminpages/reports/reports').then(m => m.Reports)
+      },
+      {
+        path: 'settings',
+        loadComponent: () => import('./adminpages/settings/settings').then(m => m.Settings)
       }
 
     ]
