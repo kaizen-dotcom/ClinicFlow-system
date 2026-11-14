@@ -1,0 +1,49 @@
+.auth-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 5%;
+  background: #ffffff;
+  border-bottom: 1px solid #e5edf4;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.brand-icon {
+  color: #205486;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.brand-name {
+  color: #205486;
+  font-size: 21px;
+  font-weight: 700;
+}
+
+.header-help {
+  display: flex;
+  gap: 5px;
+  font-size: 13px;
+  color: #71869a;
+}
+
+.header-help a {
+  color: #205486;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+@media (max-width: 480px) {
+  .auth-header {
+    padding: 16px;
+  }
+
+  .header-help {
+    font-size: 11px;
+  }
+}

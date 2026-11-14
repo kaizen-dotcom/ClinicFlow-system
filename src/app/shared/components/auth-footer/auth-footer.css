@@ -1,0 +1,32 @@
+.auth-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 5%;
+  border-top: 1px solid #e5edf4;
+  background: #ffffff;
+  color: #71869a;
+  font-size: 12px;
+}
+
+.footer-links {
+  display: flex;
+  gap: 20px;
+}
+
+.footer-links a {
+  color: #71869a;
+  text-decoration: none;
+}
+
+.footer-links a:hover {
+  color: #205486;
+}
+
+@media (max-width: 480px) {
+  .auth-footer {
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
+  }
+}

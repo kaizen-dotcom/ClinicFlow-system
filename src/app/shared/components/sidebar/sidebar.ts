@@ -1,0 +1,37 @@
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
+// 1. Import LucideIcon (the dynamic directive) and the specific icons
+import {
+  LucideDynamicIcon,
+  LucideLayoutDashboard,
+  LucideCalendar,
+  LucideUsers,
+  LucideStethoscope,
+  LucideClock,
+  LucideBarChart2,
+  LucideUser,
+  LucidePlus
+} from '@lucide/angular';
+
+@Component({
+  selector: 'app-sidebar',
+  standalone: true,
+  // 2. Import LucideIcon instead of LucideAngularModule
+  imports: [CommonModule, RouterModule, LucideDynamicIcon],
+  templateUrl: './sidebar.html',
+  styleUrls: ['./sidebar.css']
+})
+export class SidebarComponent {
+  readonly PlusIcon = LucidePlus;
+
+  menuItems = [
+    { label: 'Dashboard', icon: LucideLayoutDashboard, route: '/admin/dashboard' },
+    { label: 'Appointments', icon: LucideCalendar, route: '/admin/appointments' },
+    { label: 'Patients', icon: LucideUsers, route: '/admin/patients' },
+    { label: 'Doctors', icon: LucideStethoscope, route: '/admin/doctors' },
+    { label: 'Schedules', icon: LucideClock, route: '/admin/schedules' },
+    { label: 'Reports', icon: LucideBarChart2, route: '/admin/reports' },
+    { label: 'Profile & settings', icon: LucideUser, route: '/admin/settings' }
+  ];
+}

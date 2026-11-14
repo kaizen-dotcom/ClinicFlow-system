@@ -1,0 +1,37 @@
+<aside class="sidebar">
+  <!-- Brand / Logo Area -->
+  <div class="sidebar-brand">
+    <div class="logo-icon">
+      <!-- FIXED: Use svg with lucideIcon binding -->
+      <svg [lucideIcon]="PlusIcon" size="24"></svg>
+    </div>
+    <div class="brand-text">
+      <h1>ClinicFlow</h1>
+      <span>ADMIN WORKSPACE</span>
+    </div>
+  </div>
+
+  <!-- Navigation Links -->
+  <nav class="sidebar-nav">
+    <ul>
+      <li *ngFor="let item of menuItems">
+        <a [routerLink]="item.route" routerLinkActive="active" class="nav-link">
+          <!-- FIXED: Use svg with lucideIcon binding -->
+          <svg [lucideIcon]="item.icon" size="18"></svg>
+          {{ item.label }}
+        </a>
+      </li>
+    </ul>
+  </nav>
+
+  <!-- Bottom Help & Version Area -->
+  <div class="sidebar-footer">
+    <div class="help-box">
+      <h4>Need a hand?</h4>
+      <a href="#">Visit help center &nearr;</a>
+    </div>
+    <div class="version-info">
+      ClinicFlow &middot; Admin v1.0
+    </div>
+  </div>
+</aside>

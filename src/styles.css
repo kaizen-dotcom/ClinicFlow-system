@@ -1,1 +1,77 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
 /* You can add global styles to this file, and also import other style files */
+
+:root {
+  /* --- Your Existing Variables --- */
+  --clinic-primary: #205486;
+  --clinic-primary-dark: #163f68;
+  --clinic-border: #bfd0df;
+  --clinic-border-strong: #90a9c0;
+  --clinic-text: #203a52;
+  --clinic-muted: #6e8195;
+  --clinic-bg: #f4f8fb;
+
+  /* --- NEW: Sidebar Variables (Matched to your Figma) --- */
+  --sidebar-bg: #183B63;
+  --sidebar-hover: #1e4a7a;
+  --sidebar-active: #255C94;
+  --sidebar-text: #A0B3C6;
+
+  /* --- NEW: Global UI Variables --- */
+  --primary-green: #138A4B;
+  --primary-green-hover: #0f733d;
+  --bg-card: #FFFFFF;
+  --text-main: #1E293B;
+  --border-color: #E2E8F0;
+
+  /* --- NEW: Status Badges --- */
+  --badge-green-bg: #D1FAE5;
+  --badge-green-text: #065F46;
+  --badge-blue-bg: #DBEAFE;
+  --badge-blue-text: #1E40AF;
+  --badge-gray-bg: #F1F5F9;
+  --badge-gray-text: #475569;
+  --badge-red-bg: #FEE2E2;
+  --badge-red-text: #991B1B;
+}
+
+html, body {
+  margin: 0;
+  min-height: 100%;
+  font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+  background: var(--clinic-bg); /* Keeps your light background */
+  color: var(--clinic-text);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* --- NEW: Reusable Button Class --- */
+.btn-primary {
+  background-color: var(--primary-green);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 500;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-green-hover);
+}
+
+/* --- NEW: Reusable Card Class --- */
+.card {
+  background-color: var(--bg-card);
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}

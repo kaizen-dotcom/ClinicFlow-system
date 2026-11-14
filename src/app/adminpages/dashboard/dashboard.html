@@ -1,0 +1,107 @@
+<!-- Page Header -->
+<div class="page-header">
+  <h1>Dashboard</h1>
+  <button class="btn-primary">+ New appointment</button>
+</div>
+
+<!-- 1. Stat Cards Grid -->
+<div class="stats-grid">
+  <div class="stat-card" *ngFor="let stat of statCards">
+    <span class="stat-label">{{ stat.label }}</span>
+    <div class="stat-value">{{ stat.value }}</div>
+    <span class="stat-subtext" [class.positive]="stat.isPositive">
+      {{ stat.subtext }}
+    </span>
+  </div>
+</div>
+
+<!-- 2. Pending Requests Section -->
+<div class="section-container">
+  <div class="section-header">
+    <h2>Pending requests</h2>
+    <a href="#" class="view-all">View all requests →</a>
+  </div>
+  
+  <div class="table-wrapper">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>PATIENT</th>
+          <th>APPOINTMENT</th>
+          <th>DOCTOR</th>
+          <th>DATE & TIME</th>
+          <th>ACTION</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let req of pendingRequests">
+          <td class="font-medium">{{ req.patient }}</td>
+          <td class="text-muted">{{ req.appointment }}</td>
+          <td class="text-muted">{{ req.doctor }}</td>
+          <td class="text-muted">{{ req.dateTime }}</td>
+          <td>
+            <a href="#" class="action-link">Review</a>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- 3. Today's Appointments Section -->
+<div class="section-container">
+  <div class="section-header">
+    <h2>Today's appointments</h2>
+    <span class="section-date">Tuesday, 10 November 2026</span>
+  </div>
+  
+  <div class="table-wrapper">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>TIME</th>
+          <th>PATIENT</th>
+          <th>DOCTOR</th>
+          <th>TYPE</th>
+          <th>STATUS</th>
+          <th>ACTION</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let appt of todaysAppointments">
+          <td class="text-muted">{{ appt.time }}</td>
+          <td class="font-medium">{{ appt.patient }}</td>
+          <td class="text-muted">{{ appt.doctor }}</td>
+          <td class="text-muted">{{ appt.type }}</td>
+          <td>
+            <span class="badge" [ngClass]="getStatusClass(appt.status)">
+              {{ appt.status }}
+            </span>
+          </td>
+          <td>
+            <a href="#" class="action-link">View details</a>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  
+  <!-- Table Footer (Pagination) -->
+  <div class="table-footer">
+    <span class="text-muted">Showing 4 of 32 appointments</span>
+    <div class="pagination">
+      <button class="page-btn">&lsaquo;</button>
+      <button class="page-btn active">1</button>
+      <button class="page-btn">2</button>
+      <button class="page-btn">3</button>
+      <button class="page-btn">&rsaquo;</button>
+    </div>
+  </div>
+</div>
+
+<!-- 4. Recent Activity -->
+<div class="recent-activity">
+  <span class="activity-label">Recent activity</span>
+  <span class="activity-text">Dr. Daniel Kim updated his schedule for 12 Nov.</span>
+  <span class="activity-time">12 minutes ago</span>
+</div>

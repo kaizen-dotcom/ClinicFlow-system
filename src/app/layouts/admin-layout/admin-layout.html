@@ -1,0 +1,14 @@
+<div class="admin-container">
+  <!-- The Sidebar stays fixed on the left -->
+  <app-sidebar></app-sidebar>
+
+  <!-- The Main area holds the Navbar and the Page Content -->
+  <div class="main-content">
+    <app-navbar></app-navbar>
+    
+    <!-- The Page Content gets injected here -->
+    <main class="page-content">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>

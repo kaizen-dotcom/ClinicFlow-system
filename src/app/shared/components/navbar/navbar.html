@@ -1,0 +1,28 @@
+<header class="navbar">
+  <!-- Left Side: Hamburger + Search -->
+  <div class="nav-left">
+    <button class="icon-btn">
+      <svg [lucideIcon]="MenuIcon" size="20"></svg>
+    </button>
+
+    <div class="search-box">
+      <svg [lucideIcon]="SearchIcon" size="18" class="search-icon"></svg>
+      <input type="text" placeholder="Search for patients, doctors, or appointments..." />
+    </div>
+  </div>
+
+  <!-- Right Side: Date + Profile -->
+  <div class="nav-right">
+    <span class="nav-date">{{ currentDate }}</span>
+    
+    <div class="nav-divider"></div>
+
+    <div class="profile-menu">
+      <div class="profile-info">
+        <span class="profile-name">{{ adminName }}</span>
+        <span class="profile-role">{{ adminRole }}</span>
+      </div>
+      <svg [lucideIcon]="ChevronDownIcon" size="16" class="chevron"></svg>
+    </div>
+  </div>
+</header>

@@ -1,0 +1,91 @@
+<!-- Page Header -->
+<div class="page-header">
+  <h1>Appointment management</h1>
+  <button class="btn-primary">+ New appointment</button>
+</div>
+
+<!-- 1. Stat Cards -->
+<div class="stats-grid">
+  <div class="stat-card" *ngFor="let stat of statCards">
+    <span class="stat-label">{{ stat.label }}</span>
+    <div class="stat-value">{{ stat.value }}</div>
+    <span class="stat-subtext">{{ stat.subtext }}</span>
+  </div>
+</div>
+
+<!-- Main Container -->
+<div class="section-container">
+  
+  <!-- 2. Tabs -->
+  <div class="tabs-header">
+    <div class="tab" *ngFor="let tab of tabs" [class.active]="tab.active">
+      {{ tab.label }} 
+      <span *ngIf="tab.count" class="tab-count">{{ tab.count }}</span>
+    </div>
+  </div>
+
+  <!-- 3. Filter Bar -->
+  <div class="filter-bar">
+    <input type="text" placeholder="Search patient or appointment ID" class="filter-input">
+    <select class="filter-select"><option>All doctors</option></select>
+    <select class="filter-select"><option>Nov 2026</option></select>
+    <select class="filter-select"><option>All statuses</option></select>
+    <a href="#" class="reset-link">Reset</a>
+  </div>
+
+  <!-- 4. Table -->
+  <div class="table-wrapper">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>APPOINTMENT</th>
+          <th>PATIENT</th>
+          <th>DOCTOR</th>
+          <th>DATE & TIME</th>
+          <th>STATUS</th>
+          <th>ACTIONS</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let appt of appointments">
+          <td class="font-medium">{{ appt.id }}</td>
+          <td class="font-medium">{{ appt.patient }}</td>
+          <td class="text-muted">{{ appt.doctor }}</td>
+          <td class="text-muted">{{ appt.dateTime }}</td>
+          <td>
+            <span class="badge" [ngClass]="getStatusClass(appt.status)">
+              {{ appt.status }}
+            </span>
+          </td>
+          <td>
+            <!-- Dynamic Actions based on status -->
+            <div class="actions-cell" *ngIf="appt.status === 'Pending'">
+              <a href="#" class="action-approve">Approve</a> / 
+              <a href="#" class="action-reject">Reject</a>
+            </div>
+            <div class="actions-cell" *ngIf="appt.status === 'Approved'">
+              <a href="#" class="action-link">View</a> / 
+              <a href="#" class="action-reject">Cancel</a>
+            </div>
+            <div class="actions-cell" *ngIf="appt.status !== 'Pending' && appt.status !== 'Approved'">
+              <a href="#" class="action-link">View details</a>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 5. Pagination -->
+  <div class="table-footer">
+    <span class="text-muted">Showing 9 of 248 appointments</span>
+    <div class="pagination">
+      <button class="page-btn">&lsaquo;</button>
+      <button class="page-btn active">1</button>
+      <button class="page-btn">2</button>
+      <button class="page-btn">3</button>
+      <button class="page-btn">&rsaquo;</button>
+    </div>
+  </div>
+
+</div>

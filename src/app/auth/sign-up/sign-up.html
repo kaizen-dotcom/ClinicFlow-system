@@ -1,0 +1,110 @@
+
+<div class="signup-container">
+  <div class="signup-card">
+
+    <div class="signup-heading">
+      <h2>Create your account</h2>
+      <p>Your care starts here. Join ClinicFlow.</p>
+    </div>
+
+    <form>
+
+      <!-- Full Name -->
+      <div class="form-group">
+        <label for="fullName">Full name</label>
+        <input
+          type="text"
+          id="fullName"
+          name="fullName"
+          placeholder="Enter your full name"
+        />
+      </div>
+
+      <!-- Email -->
+      <div class="form-group">
+        <label for="email">Email address</label>
+        <input
+          type="email"
+          id="email"
+          name="email"
+          placeholder="you@example.com"
+        />
+      </div>
+
+      <!-- Password -->
+      <div class="form-group">
+        <label for="password">Password</label>
+
+        <div class="password-field">
+          <input
+            [type]="showPassword() ? 'text' : 'password'"
+            id="password"
+            name="password"
+            placeholder="Create a password"
+          />
+
+          <button
+            type="button"
+            class="show-button"
+            (click)="togglePassword()"
+          >
+            {{ showPassword() ? 'Hide' : 'Show' }}
+          </button>
+        </div>
+
+        <small>Use at least 8 characters.</small>
+      </div>
+
+      <!-- Confirm Password -->
+      <div class="form-group">
+        <label for="confirmPassword">Confirm password</label>
+
+        <div class="password-field">
+          <input
+            [type]="showConfirmPassword() ? 'text' : 'password'"
+            id="confirmPassword"
+            name="confirmPassword"
+            placeholder="Re-enter your password"
+          />
+
+          <button
+            type="button"
+            class="show-button"
+            (click)="toggleConfirmPassword()"
+          >
+            {{ showConfirmPassword() ? 'Hide' : 'Show' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Terms and Conditions -->
+      <div class="terms-group">
+        <input
+          type="checkbox"
+          id="terms"
+          name="terms"
+        />
+
+        <label for="terms">
+          I agree to the
+          <a href="#">Terms of Service</a>
+          and
+          <a href="#">Privacy Policy</a>.
+        </label>
+      </div>
+
+      <!-- Create Account -->
+      <button type="button" class="signup-button">
+        Create account
+      </button>
+
+    </form>
+
+    <!-- Login Link -->
+    <div class="login-link">
+      Already have an account?
+      <a (click)="goToLogin()">Log in</a>
+    </div>
+
+  </div>
+</div>
