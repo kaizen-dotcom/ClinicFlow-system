@@ -1,0 +1,115 @@
+<!-- Page Header -->
+<div class="page-header">
+  <div>
+    <h1>Schedule management</h1>
+    <p class="subtitle">Set doctor availability and manage bookable time slots.</p>
+  </div>
+</div>
+
+<!-- Top Toolbar -->
+<div class="toolbar-container">
+  <div class="toolbar-left">
+    <select class="filter-select doctor-select"><option>Dr. Amelia Brooks</option></select>
+    <div class="date-nav">
+      <button class="nav-btn">&lsaquo;</button>
+      <span>09 – 13 November 2026</span>
+      <button class="nav-btn">&rsaquo;</button>
+    </div>
+    <button class="btn-outline">Today</button>
+  </div>
+  <div class="toolbar-right">
+    <select class="filter-select"><option>Week</option></select>
+  </div>
+</div>
+
+<!-- Main Layout: Calendar + Form -->
+<div class="schedule-layout">
+  
+  <!-- Left Side: Calendar Grid -->
+  <div class="calendar-container">
+    <!-- Calendar Header -->
+    <div class="calendar-header">
+      <div class="time-col-header"></div>
+      <div class="day-header" *ngFor="let day of days">{{ day.label }}</div>
+    </div>
+    
+    <!-- Calendar Body -->
+    <div class="calendar-body">
+      <!-- Time Column -->
+      <div class="time-column">
+        <div class="time-label" *ngFor="let hour of [8,9,10,11,12,13,14,15,16]">{{ hour }}:00</div>
+      </div>
+
+      <!-- Grid Background Lines & Blocks -->
+      <div class="grid-area">
+        <!-- Horizontal grid lines -->
+        <div class="grid-line" *ngFor="let hour of [8,9,10,11,12,13,14,15,16]"></div>
+
+        <!-- Schedule Blocks -->
+        <div class="schedule-block" 
+             *ngFor="let block of scheduleBlocks"
+             [ngClass]="'block-' + block.type"
+             [style.grid-row]="block.startHour + ' / span ' + block.duration"
+             [style.grid-column]="block.day">
+          <span class="block-title">{{ block.title }}</span>
+          <span class="block-subtitle">{{ block.subtitle }}</span>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Calendar Legend -->
+    <div class="calendar-legend">
+      <div class="legend-item"><span class="dot dot-available"></span> Available</div>
+      <div class="legend-item"><span class="dot dot-partial"></span> Partially booked</div>
+      <div class="legend-item"><span class="dot dot-unavailable"></span> Blank periods are unavailable. All times are in clinic local time (EST).</div>
+    </div>
+  </div>
+
+  <!-- Right Side: Create Availability Form -->
+  <div class="form-container">
+    <div class="form-header">
+      <h2>Create availability</h2>
+      <p>Add bookable slots to the calendar.</p>
+    </div>
+    
+    <form class="availability-form">
+      <div class="form-group">
+        <label>Doctor</label>
+        <select class="form-control"><option>Dr. Amelia Brooks</option></select>
+      </div>
+
+      <div class="form-group">
+        <label>Date</label>
+        <input type="date" class="form-control" value="2026-11-11">
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Start time</label>
+          <input type="time" class="form-control" value="09:00">
+        </div>
+        <div class="form-group">
+          <label>End time</label>
+          <input type="time" class="form-control" value="12:00">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Slot duration</label>
+        <select class="form-control"><option>30 minutes</option></select>
+      </div>
+
+      <div class="form-checkbox">
+        <input type="checkbox" id="repeatWeekly">
+        <label for="repeatWeekly">Repeat weekly</label>
+      </div>
+
+      <p class="form-note">6 appointment slots will be created.</p>
+
+      <button type="button" class="btn-primary btn-full">Create schedule</button>
+      
+      <p class="form-footer-note">Existing appointments stay unchanged.</p>
+    </form>
+  </div>
+
+</div>

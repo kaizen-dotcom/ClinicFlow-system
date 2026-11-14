@@ -1,0 +1,73 @@
+<!-- Page Header -->
+<div class="page-header">
+  <h1>Doctor management</h1>
+  <button class="btn-primary">+ Add doctor</button>
+</div>
+
+<!-- 1. Stat Cards -->
+<div class="stats-grid">
+  <div class="stat-card" *ngFor="let stat of statCards">
+    <span class="stat-label">{{ stat.label }}</span>
+    <div class="stat-value">{{ stat.value }}</div>
+    <span class="stat-subtext">{{ stat.subtext }}</span>
+  </div>
+</div>
+
+<!-- Main Container -->
+<div class="section-container">
+  
+  <!-- 2. Filter Bar -->
+  <div class="filter-bar">
+    <input type="text" placeholder="Search doctor name or ID" class="filter-input">
+    <select class="filter-select"><option>All specialties</option></select>
+    <select class="filter-select"><option>All availability</option></select>
+    <button class="btn-outline">Export CSV</button>
+  </div>
+
+  <!-- 3. Table -->
+  <div class="table-wrapper">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>DOCTOR</th>
+          <th>SPECIALTY</th>
+          <th>EMAIL</th>
+          <th>TODAY'S HOURS</th>
+          <th>STATUS</th>
+          <th>ACTIONS</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let doc of doctors">
+          <td class="font-medium">{{ doc.name }}</td>
+          <td class="text-muted">{{ doc.specialty }}</td>
+          <td class="text-muted">{{ doc.email }}</td>
+          <td class="text-muted">{{ doc.hours }}</td>
+          <td>
+            <span class="badge" [ngClass]="getStatusClass(doc.status)">
+              {{ doc.status }}
+            </span>
+          </td>
+          <td>
+            <div class="actions-cell">
+              <a href="#" class="action-link">View</a> / 
+              <a href="#" class="action-link">Edit</a>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 4. Pagination -->
+  <div class="table-footer">
+    <span class="text-muted">Showing 1-8 of 16 doctors</span>
+    <div class="pagination">
+      <button class="page-btn">&lsaquo;</button>
+      <button class="page-btn active">1</button>
+      <button class="page-btn">2</button>
+      <button class="page-btn">&rsaquo;</button>
+    </div>
+  </div>
+
+</div>

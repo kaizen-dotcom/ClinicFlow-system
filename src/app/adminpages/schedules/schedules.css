@@ -1,0 +1,293 @@
+/* --- Page Header --- */
+.page-header {
+  margin-bottom: 24px;
+}
+
+.page-header h1 {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 4px;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+/* --- Toolbar --- */
+.toolbar-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  background-color: white;
+  padding: 12px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+
+.toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.doctor-select {
+  width: 200px;
+}
+
+.date-nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-main);
+  border: 1px solid var(--border-color);
+  padding: 6px 12px;
+  border-radius: 6px;
+}
+
+.nav-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 16px;
+  cursor: pointer;
+}
+
+/* --- Main Layout --- */
+.schedule-layout {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 24px;
+}
+
+/* --- Calendar Container --- */
+.calendar-container {
+  background-color: white;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.calendar-header {
+  display: grid;
+  grid-template-columns: 60px repeat(5, 1fr);
+  border-bottom: 1px solid var(--border-color);
+  background-color: #FAFBFC;
+}
+
+.time-col-header {
+  border-right: 1px solid var(--border-color);
+}
+
+.day-header {
+  padding: 16px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  border-right: 1px solid var(--border-color);
+}
+
+.day-header:last-child {
+  border-right: none;
+}
+
+/* --- Calendar Body --- */
+.calendar-body {
+  display: flex;
+  flex: 1;
+  position: relative;
+}
+
+.time-column {
+  width: 60px;
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+}
+
+.time-label {
+  height: 60px; /* 60px per hour row */
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding-right: 8px;
+  padding-top: 8px;
+  font-size: 11px;
+  color: var(--text-muted);
+  box-sizing: border-box;
+}
+
+.grid-area {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  grid-template-rows: repeat(9, 60px); /* 9 hours = 8:00 to 17:00 */
+  position: relative;
+}
+
+.grid-line {
+  grid-column: 1 / -1;
+  border-bottom: 1px solid var(--border-color);
+  height: 60px;
+}
+
+/* --- Schedule Blocks --- */
+.schedule-block {
+  margin: 2px 4px;
+  border-radius: 4px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-left: 3px solid transparent;
+  overflow: hidden;
+  cursor: pointer;
+  z-index: 1;
+}
+
+.block-available {
+  background-color: #E8F5E9; /* Light green */
+  border-left-color: #4CAF50;
+}
+
+.block-partial {
+  background-color: #E3F2FD; /* Light blue */
+  border-left-color: #2196F3;
+}
+
+.block-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.block-subtitle {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+/* --- Calendar Legend --- */
+.calendar-legend {
+  display: flex;
+  gap: 24px;
+  padding: 16px;
+  border-top: 1px solid var(--border-color);
+  background-color: #FAFBFC;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.dot-available { background-color: #4CAF50; }
+.dot-partial { background-color: #2196F3; }
+.dot-unavailable { background-color: transparent; border: 1px solid var(--border-color); }
+
+/* --- Right Side Form --- */
+.form-container {
+  background-color: white;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 24px;
+  height: fit-content;
+}
+
+.form-header {
+  margin-bottom: 20px;
+}
+
+.form-header h2 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 4px;
+}
+
+.form-header p {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-main);
+  margin-bottom: 6px;
+}
+
+.form-control {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--text-main);
+  outline: none;
+  box-sizing: border-box;
+}
+
+.form-control:focus {
+  border-color: var(--clinic-primary);
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.form-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.form-checkbox label {
+  font-size: 13px;
+  color: var(--text-main);
+  margin: 0;
+  cursor: pointer;
+}
+
+.form-note {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 20px;
+}
+
+.btn-full {
+  width: 100%;
+  padding: 12px;
+}
+
+.form-footer-note {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-align: center;
+  margin-top: 12px;
+  margin-bottom: 0;
+}

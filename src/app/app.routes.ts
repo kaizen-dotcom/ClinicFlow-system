@@ -39,14 +39,26 @@ export const routes: Routes = [
       },
       {
         path: 'dashboard',
-        // FIXED: Added 'pages/' to the path
         loadComponent: () => import('./adminpages/dashboard/dashboard').then(m => m.DashboardComponent)
       },
       {
         path: 'appointments',
-        // NEW: Added the appointments route
         loadComponent: () => import('./adminpages/appointments/appointments').then(m => m.AppointmentsComponent)
+      },
+      {
+        path: 'patients',
+        loadComponent: () =>
+          import('./adminpages/patients/patients').then(m => m.PatientsComponent)
+      },
+      {
+        path: 'doctors',
+        loadComponent: () =>import('./adminpages/doctors/doctors').then(m => m.Doctors)
+      },
+      {
+        path: 'schedules',
+        loadComponent: () => import('./adminpages/schedules/schedules').then(m => m.Schedules)
       }
+
     ]
   },
 
