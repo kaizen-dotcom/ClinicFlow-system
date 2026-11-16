@@ -1,10 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Doctors } from './doctors';
 
-describe('Doctors', () => {
+describe('DoctorsComponent', () => {
   let component: Doctors;
   let fixture: ComponentFixture<Doctors>;
-
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [Doctors],

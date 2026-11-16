@@ -11,7 +11,8 @@ import {
   LucideClock,
   LucideBarChart2,
   LucideUser,
-  LucidePlus
+  LucidePlus,
+  LucideLogOut
 } from '@lucide/angular';
 
 @Component({
@@ -24,6 +25,8 @@ import {
 })
 export class SidebarComponent {
   readonly PlusIcon = LucidePlus;
+  readonly logoutIcon = LucideLogOut;
+  showLogoutConfirm = false;
 
   menuItems = [
     { label: 'Dashboard', icon: LucideLayoutDashboard, route: '/admin/dashboard' },
@@ -34,4 +37,17 @@ export class SidebarComponent {
     { label: 'Reports', icon: LucideBarChart2, route: '/admin/reports' },
     { label: 'Profile & settings', icon: LucideUser, route: '/admin/settings' }
   ];
+
+  confirmLogout(): void {
+    this.showLogoutConfirm = true;
+  }
+
+  cancelLogout(): void {
+    this.showLogoutConfirm = false;
+  }
+
+  logout(): void {
+    this.showLogoutConfirm = false;
+    window.location.href = '/login';
+  }
 }
