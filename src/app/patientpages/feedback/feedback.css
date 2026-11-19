@@ -1,0 +1,187 @@
+/* --- Page Header --- */
+.page-header {
+  margin-bottom: 24px;
+}
+.page-header h1 {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 4px;
+}
+.subtitle {
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+/* --- Grid Layout --- */
+.states-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+/* --- State Cards --- */
+.state-card {
+  background-color: white;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+}
+.state-card h2 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 8px;
+}
+.card-desc {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 20px;
+}
+
+/* --- Details Box --- */
+.details-box {
+  background-color: #FAFBFC;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 16px;
+  margin-bottom: 24px;
+  flex-grow: 1; /* Pushes buttons to bottom */
+}
+.details-box p {
+  font-size: 13px;
+  margin: 0 0 8px 0;
+  color: var(--text-main);
+}
+.details-box p:last-child {
+  margin-bottom: 0;
+}
+.text-muted {
+  color: var(--text-muted);
+}
+.status-note {
+  margin-top: 12px !important;
+  padding-top: 12px;
+  border-top: 1px dashed var(--border-color);
+  font-size: 12px !important;
+  color: var(--text-muted);
+}
+
+/* --- Card Actions --- */
+.card-actions {
+  display: flex;
+  gap: 12px;
+}
+
+/* --- Banners --- */
+.feedback-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+}
+.banner-content h3 {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.banner-content p {
+  font-size: 13px;
+  margin: 0;
+}
+.banner-action {
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+/* Success Banner */
+.banner-success {
+  background-color: #E8F5E9;
+  border-color: #A5D6A7;
+}
+.banner-success h3, .banner-success p, .banner-success .banner-action {
+  color: #2E7D32;
+}
+
+/* Warning Banner */
+.banner-warning {
+  background-color: #E3F2FD;
+  border-color: #90CAF9;
+}
+.banner-warning h3 { color: var(--text-main); }
+.banner-warning p { color: var(--text-muted); }
+
+/* --- Empty State --- */
+.empty-state-card {
+  background-color: white;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.empty-content h2 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 8px;
+}
+.empty-content p {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* --- Buttons --- */
+.btn-primary {
+  background-color: var(--primary-green);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn-primary:hover { background-color: var(--primary-green-hover); }
+
+.btn-outline {
+  background-color: white;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-main);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn-outline:hover { background-color: var(--bg-main); }
+
+.btn-danger-outline {
+  background-color: white;
+  border: 1px solid #FCA5A5;
+  border-radius: 6px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #DC2626;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn-danger-outline:hover { background-color: #FEF2F2; }

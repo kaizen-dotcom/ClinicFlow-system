@@ -1,0 +1,43 @@
+<!-- Page Header -->
+<div class="page-header">
+  <h1>Browse doctors</h1>
+  <p class="subtitle">Find the right care, at a time that works for you.</p>
+</div>
+
+<!-- Search & Filter Bar -->
+<div class="search-bar">
+  <input 
+    type="text" 
+    class="search-input" 
+    placeholder="Search by doctor name or specialty"
+    [(ngModel)]="searchQuery">
+  
+  <select class="specialty-select" [(ngModel)]="selectedSpecialty">
+    <option *ngFor="let s of specialties">{{ s }}</option>
+  </select>
+  
+  <button class="btn-primary">Search</button>
+</div>
+
+<!-- Result Count -->
+<p class="result-count">{{ doctors.length }} doctors available · In-person consultations</p>
+
+<!-- Doctor List -->
+<div class="doctor-list">
+  <div class="doctor-card" *ngFor="let doc of doctors">
+    <div class="doctor-info">
+      <h2 class="doctor-name">{{ doc.name }}</h2>
+      <p class="doctor-specialty">{{ doc.specialty }} · {{ doc.experience }}</p>
+    </div>
+    
+    <div class="doctor-availability">
+      <span class="availability-label">Next available</span>
+      <span class="availability-date">{{ doc.nextAvailable }}</span>
+    </div>
+    
+    <button class="btn-outline" type="button" (click)="viewProfile(doc)">View profile &rarr;</button>
+  </div>
+</div>
+
+<!-- Footer Note -->
+<p class="footer-note">Showing all {{ doctors.length }} doctors. Select a profile to see the full schedule.</p>

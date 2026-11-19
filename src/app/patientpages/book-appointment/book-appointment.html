@@ -1,0 +1,106 @@
+<!-- Page Header -->
+<div class="page-header">
+  <h1>Book appointment</h1>
+  <p class="subtitle">Choose your care, pick a time, and send your request.</p>
+</div>
+
+<!-- Stepper -->
+<div class="stepper">
+  <div class="step active">1 Choose a doctor</div>
+  <div class="step-arrow">&rarr;</div>
+  <div class="step">2 Choose date & time</div>
+  <div class="step-arrow">&rarr;</div>
+  <div class="step">3 Review & request</div>
+</div>
+
+<!-- Main Booking Area -->
+<div class="booking-layout">
+  
+  <!-- Left: Booking Form -->
+  <div class="booking-form">
+    
+    <!-- Doctor Selector -->
+    <div class="form-section">
+      <label class="form-label">Doctor</label>
+      <select class="form-control" [(ngModel)]="selectedDoctor">
+        <option *ngFor="let doc of doctors">{{ doc }}</option>
+      </select>
+    </div>
+
+    <!-- Date Selector -->
+    <div class="form-section">
+      <label class="form-label">Available dates · November 2026</label>
+      <div class="date-selector">
+        <div class="date-item" *ngFor="let d of dates; let i = index" [class.selected]="d.selected" (click)="selectDate(i)">
+          <span class="date-day">{{ d.day }}</span>
+          <span class="date-number">{{ d.date }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Time Slots -->
+    <div class="form-section">
+      <label class="form-label">Available time slots</label>
+      <div class="time-slots">
+        <div class="slot"
+             *ngFor="let slot of timeSlots; let i = index"
+             [class.slot-available]="slot.status === 'available'"
+             [class.slot-partial]="slot.status === 'partial'"
+             [class.slot-unavailable]="slot.status === 'unavailable'"
+             [class.slot-selected]="slot.status === 'selected'"
+             (click)="selectSlot(i)">
+          <span class="slot-time">{{ slot.time }}</span>
+          <span class="slot-status">{{ slot.status === 'available' ? 'Available' : slot.status === 'partial' ? 'Fully booked' : slot.status === 'unavailable' ? 'Unavailable' : 'Selected' }}</span>
+        </div>
+      </div>
+      <p class="selected-note">Selected: 10:00–10:30 AM · Clinic local time</p>
+    </div>
+
+    <!-- Appointment Type -->
+    <div class="form-section">
+      <label class="form-label">Appointment type</label>
+      <select class="form-control" [(ngModel)]="selectedType">
+        <option *ngFor="let type of appointmentTypes">{{ type }}</option>
+      </select>
+    </div>
+
+    <!-- Reason for Visit -->
+    <div class="form-section">
+      <label class="form-label">Reason for visit (optional)</label>
+      <textarea class="form-control" rows="3" [(ngModel)]="visitReason"></textarea>
+    </div>
+
+  </div>
+
+  <!-- Right: Appointment Summary -->
+  <div class="summary-panel">
+    <h2>Appointment summary</h2>
+    
+    <div class="summary-row">
+      <span class="summary-label">Doctor</span>
+      <span class="summary-value">{{ summary.doctor }}</span>
+    </div>
+    <div class="summary-row">
+      <span class="summary-label">Date</span>
+      <span class="summary-value">{{ summary.date }}</span>
+    </div>
+    <div class="summary-row">
+      <span class="summary-label">Time</span>
+      <span class="summary-value">{{ summary.time }}</span>
+    </div>
+    <div class="summary-row">
+      <span class="summary-label">Location</span>
+      <span class="summary-value">{{ summary.location }}</span>
+    </div>
+    <div class="summary-row">
+      <span class="summary-label">Status after request</span>
+      <span class="summary-value">{{ summary.status }}</span>
+    </div>
+
+    <p class="summary-note">The clinic will review your request.</p>
+
+    <button class="btn-primary btn-block">Review appointment</button>
+    <p class="summary-footer">Need help? Contact the clinic &rarr;</p>
+  </div>
+
+</div>

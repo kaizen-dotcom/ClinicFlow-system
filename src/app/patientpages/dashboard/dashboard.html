@@ -1,0 +1,75 @@
+<!-- Page Header -->
+<div class="page-header">
+  <h1>Patient dashboard</h1>
+  <p class="subtitle">Welcome back, {{ patientName }}. Let's take care of your health.</p>
+</div>
+
+<!-- Next Visit Highlight Card -->
+<div class="next-visit-card">
+  <div class="next-visit-header">
+    <span class="eyebrow">YOUR NEXT VISIT</span>
+    <span class="badge badge-approved">{{ nextVisit.status }}</span>
+  </div>
+
+  <h2 class="visit-title">{{ nextVisit.type }}</h2>
+  <p class="visit-doctor">{{ nextVisit.doctor }} · {{ nextVisit.specialty }}</p>
+
+  <div class="visit-details-grid">
+    <div class="detail-item">
+      <span class="detail-label">Date</span>
+      <span class="detail-value">{{ nextVisit.date }}</span>
+    </div>
+    <div class="detail-item">
+      <span class="detail-label">Time</span>
+      <span class="detail-value">{{ nextVisit.time }}</span>
+    </div>
+    <div class="detail-item">
+      <span class="detail-label">Location</span>
+      <span class="detail-value">{{ nextVisit.location }}</span>
+    </div>
+  </div>
+
+  <p class="visit-note">{{ nextVisit.note }}</p>
+
+  <div class="visit-action">
+    <button class="btn-outline">View appointment</button>
+  </div>
+</div>
+
+<!-- Stats Row -->
+<div class="stats-row">
+  <div class="stat-block" *ngFor="let stat of stats">
+    <div class="stat-number">{{ stat.value }}</div>
+    <div class="stat-label">{{ stat.label }}</div>
+  </div>
+</div>
+
+<!-- Appointment Activity -->
+<div class="activity-section">
+  <div class="section-header">
+    <h2>Appointment activity</h2>
+    <a href="#" class="view-all">View all appointments &rarr;</a>
+  </div>
+  
+  <div class="activity-list">
+    <div class="activity-item" *ngFor="let act of recentActivity">
+      <div class="activity-main">
+        <span class="activity-type">{{ act.type }}</span>
+        <span class="activity-doctor">{{ act.doctor }}</span>
+      </div>
+      <div class="activity-right">
+        <span class="activity-date">{{ act.date }}</span>
+        <span class="badge" [ngClass]="getStatusClass(act.status)">{{ act.status }}</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Bottom CTA Banner -->
+<div class="cta-banner">
+  <div class="cta-content">
+    <h3>Good care starts with the right doctor.</h3>
+    <p>Browse specialists and choose an available appointment.</p>
+  </div>
+  <button class="btn-primary">Book appointment</button>
+</div>

@@ -1,0 +1,39 @@
+<!-- Page Header -->
+<div class="page-header">
+  <h1>Notifications</h1>
+  <p class="subtitle">Stay up to date with your appointments and care team.</p>
+</div>
+
+<!-- Tabs Bar -->
+<div class="tabs-bar">
+  <div class="tabs">
+    <div class="tab" [class.active]="activeTab === 'all'" (click)="setTab('all')">
+      All notifications
+    </div>
+    <div class="tab" [class.active]="activeTab === 'unread'" (click)="setTab('unread')">
+      Unread
+      <span class="tab-count">{{ unreadCount }}</span>
+    </div>
+  </div>
+  <a href="#" class="mark-read" (click)="markAllAsRead(); $event.preventDefault()">Mark all as read</a>
+</div>
+
+<!-- Notification List -->
+<div class="notification-list">
+  <div class="notification-item" 
+       *ngFor="let notif of notifications"
+       [class.unread]="notif.unread"
+       [class.hidden]="activeTab === 'unread' && !notif.unread">
+    <div class="notif-header">
+      <span class="notif-type">{{ notif.type }}</span>
+      <span class="notif-time">{{ notif.time }}</span>
+    </div>
+    <h3 class="notif-title">{{ notif.title }}</h3>
+    <p class="notif-doctor">{{ notif.doctor }}</p>
+    <p class="notif-message">{{ notif.message }}</p>
+    <a href="#" class="notif-action">{{ notif.action }}</a>
+  </div>
+</div>
+
+<!-- Footer Note -->
+<p class="footer-note">You're up to date. New appointment updates will appear here.</p>

@@ -1,0 +1,224 @@
+/* --- Page Header --- */
+.page-header {
+  margin-bottom: 24px;
+}
+.page-header h1 {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 4px;
+}
+.subtitle {
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+/* --- Doctor Profile --- */
+.doctor-profile {
+  padding: 24px;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 24px;
+}
+.specialty-tag {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+.doctor-name {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-main);
+  margin: 8px 0 4px;
+}
+.doctor-title {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+}
+.doctor-meta {
+  display: flex;
+  gap: 24px;
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+}
+.doctor-bio {
+  font-size: 14px;
+  color: var(--text-main);
+  line-height: 1.6;
+}
+
+/* --- Time Section --- */
+.time-section {
+  margin-bottom: 24px;
+}
+.section-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 4px;
+}
+.section-note {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+}
+
+/* --- Date Selector --- */
+.date-selector {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.date-item {
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 12px 16px;
+  text-align: center;
+  cursor: pointer;
+  min-width: 64px;
+  transition: all 0.2s;
+}
+.date-item:hover {
+  border-color: var(--clinic-primary);
+}
+.date-item.selected {
+  background-color: var(--clinic-primary);
+  border-color: var(--clinic-primary);
+  color: white;
+}
+.date-day {
+  display: block;
+  font-size: 12px;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+.date-number {
+  display: block;
+  font-size: 18px;
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+/* --- Time Slots --- */
+.time-slots {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.slot {
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.slot-time {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+.slot-status {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.slot-available {
+  border-color: var(--primary-green);
+}
+.slot-available:hover {
+  background-color: #E8F5E9;
+}
+.slot-partial {
+  background-color: #F0F9FF;
+  border-color: #BAE6FD;
+}
+.slot-unavailable {
+  background-color: #F8FAFC;
+  color: var(--text-muted);
+}
+.slot-selected {
+  background-color: var(--primary-green);
+  border-color: var(--primary-green);
+  color: white;
+}
+.slot-selected .slot-time,
+.slot-selected .slot-status {
+  color: white;
+}
+
+/* --- Selected Summary --- */
+.selected-summary {
+  font-size: 13px;
+  color: var(--text-main);
+  margin-bottom: 24px;
+}
+
+/* --- Visit Panel --- */
+.visit-panel {
+  background-color: #F8FAFC;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+.visit-panel h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 12px;
+}
+.visit-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+.visit-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-main);
+}
+.visit-value {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.visit-note {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 8px;
+}
+
+/* --- Actions --- */
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 16px;
+}
+
+.btn-primary {
+  background-color: var(--primary-green);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.btn-primary:hover {
+  background-color: var(--primary-green-hover);
+}
+
+/* --- Footer Note --- */
+.footer-note {
+  font-size: 13px;
+  color: var(--text-muted);
+  text-align: left;
+  margin-top: 16px;
+}

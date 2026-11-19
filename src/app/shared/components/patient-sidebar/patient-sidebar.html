@@ -1,0 +1,51 @@
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    <div class="logo-icon">
+      <svg [lucideIcon]="PlusIcon" size="24"></svg>
+    </div>
+    <div class="brand-text">
+      <h1>ClinicFlow</h1>
+      <span>PATIENT PORTAL</span>
+    </div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <ul>
+      <li *ngFor="let item of menuItems">
+        <a [routerLink]="item.route" routerLinkActive="active" class="nav-link">
+          <svg [lucideIcon]="item.icon" size="18"></svg>
+          {{ item.label }}
+        </a>
+      </li>
+
+      <li>
+        <button type="button" class="nav-link logout-link" (click)="confirmLogout()">
+          <svg [lucideIcon]="logoutIcon" size="18"></svg>
+          Log out
+        </button>
+      </li>
+    </ul>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="help-box">
+      <h4>Need a hand?</h4>
+      <a href="#">Contact the clinic &nearr;</a>
+    </div>
+    <div class="version-info">
+      ClinicFlow &middot; Patient v1.0
+    </div>
+  </div>
+
+  <div class="logout-modal-backdrop" *ngIf="showLogoutConfirm" (click)="cancelLogout()">
+    <div class="logout-modal" role="dialog" aria-modal="true" aria-labelledby="logout-title" (click)="$event.stopPropagation()">
+      <h3 id="logout-title">Confirm logout</h3>
+      <p>Are you sure you want to log out?</p>
+
+      <div class="logout-modal-actions">
+        <button type="button" class="cancel-btn" (click)="cancelLogout()">No</button>
+        <button type="button" class="confirm-btn" (click)="logout()">Yes</button>
+      </div>
+    </div>
+  </div>
+</aside>

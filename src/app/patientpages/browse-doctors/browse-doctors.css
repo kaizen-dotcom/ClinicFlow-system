@@ -1,0 +1,132 @@
+/* --- Page Header --- */
+.page-header {
+  margin-bottom: 24px;
+}
+.page-header h1 {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 4px;
+}
+.subtitle {
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+/* --- Search Bar --- */
+.search-bar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.search-input {
+  flex: 1;
+  padding: 10px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+}
+.search-input:focus {
+  border-color: var(--clinic-primary);
+}
+.specialty-select {
+  padding: 10px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  background-color: white;
+  color: var(--text-main);
+  outline: none;
+  cursor: pointer;
+}
+
+/* --- Result Count --- */
+.result-count {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 24px;
+}
+
+/* --- Doctor List --- */
+.doctor-list {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--border-color);
+}
+.doctor-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 0;
+  border-bottom: 1px solid var(--border-color);
+  gap: 24px;
+}
+.doctor-info {
+  flex: 1;
+}
+.doctor-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 4px;
+}
+.doctor-specialty {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.doctor-availability {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 180px;
+}
+.availability-label {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.availability-date {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--primary-green);
+}
+
+/* --- Buttons --- */
+.btn-primary {
+  background-color: var(--primary-green);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.btn-primary:hover {
+  background-color: var(--primary-green-hover);
+}
+
+.btn-outline {
+  background-color: white;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-main);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn-outline:hover {
+  background-color: var(--bg-main);
+}
+
+/* --- Footer --- */
+.footer-note {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 24px;
+}

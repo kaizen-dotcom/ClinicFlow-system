@@ -4,6 +4,7 @@ import { Login } from './auth/login/login';
 import { Signup } from './auth/sign-up/sign-up';
 import { AuthLayout } from './layouts/auth-layout/auth-layout';
 import { AdminLayoutComponent } from './layouts/admin-layout/admin-layout';
+import { PatientLayoutComponent } from './layouts/patient-layout/patient-layout';
 
 export const routes: Routes = [
   // 1. AUTH PAGES
@@ -70,9 +71,48 @@ export const routes: Routes = [
     ]
   },
 
-  // 3. Fallback
+  // 3. PATIENT PAGES
   {
-    path: '**',
-    redirectTo: 'login'
-  }
+    path: 'patient',
+    component: PatientLayoutComponent,
+    children: [
+      {
+        path: '',
+        redirectTo: 'dashboard',
+        pathMatch: 'full'
+      },
+      {
+        path: 'dashboard',
+        loadComponent: () => import('./patientpages/dashboard/dashboard').then(m => m.DashboardComponent)
+      },
+      {
+        path: 'browse-doctors',
+        loadComponent: () => import('./patientpages/browse-doctors/browse-doctors').then(m => m.BrowseDoctors)
+      },
+      {
+        path: 'doctor-details/:id',
+        loadComponent: () => import('./patientpages/doctor-details/doctor-details').then(m => m.DoctorDetails)
+      },
+      {
+        path: 'book-appointment',
+        loadComponent: () => import('./patientpages/book-appointment/book-appointment').then(m => m.BookAppointment)
+      },
+      {
+        path: 'appointments',
+        loadComponent: () => import('./patientpages/appointments/appointments').then(m => m.MyAppointments)
+      },
+      {
+        path: 'notifications',
+        loadComponent: () => import('./patientpages/notifications/notifications').then(m => m.Notifications)
+      },
+      {
+        path: 'profile',
+        loadComponent: () => import('./patientpages/my-profile/my-profile').then(m => m.MyProfile)
+      },
+      {
+        path: 'feedback',
+        loadComponent: () => import('./patientpages/feedback/feedback').then(m => m.FeedbackStates)
+      }
+    ]
+  },
 ];

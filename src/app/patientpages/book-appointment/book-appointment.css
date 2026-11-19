@@ -1,0 +1,234 @@
+/* --- Page Header --- */
+.page-header {
+  margin-bottom: 24px;
+}
+.page-header h1 {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 4px;
+}
+.subtitle {
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+/* --- Stepper --- */
+.stepper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+  padding: 16px 24px;
+  background-color: #E3EEF9;
+  border-radius: 6px;
+}
+.step {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--clinic-primary);
+}
+.step.active {
+  color: var(--primary-green);
+  font-weight: 600;
+}
+.step-arrow {
+  font-size: 16px;
+  color: var(--clinic-primary);
+}
+
+/* --- Booking Layout --- */
+.booking-layout {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 24px;
+}
+
+/* --- Form --- */
+.booking-form {
+  background-color: white;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 24px;
+}
+.form-section {
+  margin-bottom: 24px;
+}
+.form-section:last-child {
+  margin-bottom: 0;
+}
+.form-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-main);
+  margin-bottom: 8px;
+}
+.form-control {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--text-main);
+  outline: none;
+  box-sizing: border-box;
+}
+.form-control:focus {
+  border-color: var(--clinic-primary);
+}
+textarea.form-control {
+  resize: vertical;
+}
+
+/* --- Date Selector --- */
+.date-selector {
+  display: flex;
+  gap: 12px;
+}
+.date-item {
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 12px 16px;
+  text-align: center;
+  cursor: pointer;
+  min-width: 64px;
+  transition: all 0.2s;
+}
+.date-item:hover {
+  border-color: var(--clinic-primary);
+}
+.date-item.selected {
+  background-color: var(--clinic-primary);
+  border-color: var(--clinic-primary);
+  color: white;
+}
+.date-day {
+  display: block;
+  font-size: 12px;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+.date-number {
+  display: block;
+  font-size: 18px;
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+/* --- Time Slots --- */
+.time-slots {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.slot {
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.slot-time {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+.slot-status {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.slot-available {
+  border-color: var(--primary-green);
+}
+.slot-available:hover {
+  background-color: #E8F5E9;
+}
+.slot-partial {
+  background-color: #F0F9FF;
+  border-color: #BAE6FD;
+}
+.slot-unavailable {
+  background-color: #F8FAFC;
+  color: var(--text-muted);
+}
+.slot-selected {
+  background-color: var(--primary-green);
+  border-color: var(--primary-green);
+  color: white;
+}
+.slot-selected .slot-time,
+.slot-selected .slot-status {
+  color: white;
+}
+.selected-note {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* --- Summary Panel --- */
+.summary-panel {
+  background-color: #F0F7FF;
+  border: 1px solid #BAE0FD;
+  border-radius: 8px;
+  padding: 24px;
+  height: fit-content;
+}
+.summary-panel h2 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 20px;
+}
+.summary-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 16px;
+}
+.summary-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+.summary-value {
+  font-size: 14px;
+  color: var(--text-main);
+  font-weight: 500;
+}
+.summary-note {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 16px;
+  margin-bottom: 16px;
+}
+.summary-footer {
+  font-size: 12px;
+  color: var(--clinic-primary);
+  text-align: center;
+  margin-top: 12px;
+  margin-bottom: 0;
+}
+
+/* --- Button --- */
+.btn-primary {
+  background-color: var(--primary-green);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 12px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.btn-primary:hover {
+  background-color: var(--primary-green-hover);
+}
+.btn-block {
+  width: 100%;
+}

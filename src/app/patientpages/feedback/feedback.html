@@ -1,0 +1,78 @@
+<!-- Page Header -->
+<div class="page-header">
+  <h1>Booking & feedback states</h1>
+  <p class="subtitle">Clear decisions and helpful feedback at every step.</p>
+</div>
+
+<!-- Top Grid: Confirm & Cancel Cards -->
+<div class="states-grid">
+  
+  <!-- Confirm Card -->
+  <div class="state-card">
+    <h2>Confirm your appointment request</h2>
+    <p class="card-desc">Check your details before sending to the clinic.</p>
+    
+    <div class="details-box">
+      <p><strong>Dr. Amelia Brooks</strong> · General consultation</p>
+      <p class="text-muted">Monday, 16 November 2026</p>
+      <p class="text-muted">10:00–10:30 AM · ClinicFlow · Room 204</p>
+      <p class="status-note">Your status will be Pending until the clinic approves.</p>
+    </div>
+    
+    <div class="card-actions">
+      <button class="btn-outline">Go back</button>
+      <button class="btn-primary">Send request</button>
+    </div>
+  </div>
+
+  <!-- Cancel Card -->
+  <div class="state-card">
+    <h2>Cancel this appointment?</h2>
+    <p class="card-desc">Your booked time will be released to other patients.</p>
+    
+    <div class="details-box">
+      <p><strong>Dr. Amelia Brooks</strong> · General consultation</p>
+      <p class="text-muted">Thursday, 12 November 2026</p>
+      <p class="text-muted">09:00–09:30 AM · ClinicFlow · Room 204</p>
+      <p class="status-note">You can book a new visit whenever you're ready.</p>
+    </div>
+    
+    <div class="card-actions">
+      <button class="btn-outline">Keep appointment</button>
+      <button class="btn-danger-outline">Cancel appointment</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- Feedback Banners -->
+<div class="feedback-section">
+  
+  <!-- Success Banner -->
+  <div class="banner banner-success">
+    <div class="banner-content">
+      <h3>Request sent: Pending approval</h3>
+      <p>Your 16 Nov request has been sent. We'll notify you when the clinic responds.</p>
+    </div>
+    <a [routerLink]="'/patient/appointments'" class="banner-action">View appointments &rarr;</a>
+  </div>
+
+  <!-- Error/Expired Banner -->
+  <div class="banner banner-warning">
+    <div class="banner-content">
+      <h3>This time is no longer available</h3>
+      <p>Another patient just booked 10:00 AM. Your request was not sent.<br>Your details are saved. Please choose another available time.</p>
+    </div>
+    <button class="btn-outline" [routerLink]="'/patient/book-appointment'">Choose another time</button>
+  </div>
+
+</div>
+
+<!-- Empty State -->
+<div class="empty-state-card">
+  <div class="empty-content">
+    <h2>No upcoming appointments</h2>
+    <p>When you book a visit, you can follow its status here.<br>Find a doctor and take the next step in your care.</p>
+  </div>
+  <button class="btn-primary" [routerLink]="'/patient/browse-doctors'">Browse doctors</button>
+</div>
