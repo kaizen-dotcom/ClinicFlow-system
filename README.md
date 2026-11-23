@@ -1,5 +1,14 @@
 # ClinicFlowSystem
 
+Clinic appointment system: patients book visits online, clinic staff review and manage them.
+
+## Project structure
+
+| Folder | What it is |
+|---|---|
+| `src/` | Angular frontend (admin portal + patient portal) |
+| `backend/` | ASP.NET Core Web API (.NET 10) + MySQL — see [backend/README.md](backend/README.md) for setup |
+
 This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 22.1.4.
 
 ## Development server
