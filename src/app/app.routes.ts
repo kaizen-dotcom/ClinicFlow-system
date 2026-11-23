@@ -3,8 +3,7 @@ import { Routes } from '@angular/router';
 import { Login } from './auth/login/login';
 import { Signup } from './auth/sign-up/sign-up';
 import { AuthLayout } from './layouts/auth-layout/auth-layout';
-import { AdminLayoutComponent } from './layouts/admin-layout/admin-layout';
-import { PatientLayoutComponent } from './layouts/patient-layout/patient-layout';
+import { guestGuard, roleGuard } from './auth/role.guard';
 
 export const routes: Routes = [
   // 1. AUTH PAGES
@@ -19,11 +18,13 @@ export const routes: Routes = [
       },
       {
         path: 'login',
-        component: Login
+        component: Login,
+        canActivate: [guestGuard]
       },
       {
         path: 'sign-up',
-        component: Signup
+        component: Signup,
+        canActivate: [guestGuard]
       }
     ]
   },
@@ -31,7 +32,8 @@ export const routes: Routes = [
   // 2. ADMIN PAGES
   {
     path: 'admin',
-    component: AdminLayoutComponent,
+    loadComponent: () => import('./layouts/admin-layout/admin-layout').then(m => m.AdminLayoutComponent),
+    canActivate: [roleGuard('admin')],
     children: [
       {
         path: '',
@@ -74,7 +76,8 @@ export const routes: Routes = [
   // 3. PATIENT PAGES
   {
     path: 'patient',
-    component: PatientLayoutComponent,
+    loadComponent: () => import('./layouts/patient-layout/patient-layout').then(m => m.PatientLayoutComponent),
+    canActivate: [roleGuard('patient')],
     children: [
       {
         path: '',
@@ -94,10 +97,6 @@ export const routes: Routes = [
         loadComponent: () => import('./patientpages/doctor-details/doctor-details').then(m => m.DoctorDetails)
       },
       {
-        path: 'book-appointment',
-        loadComponent: () => import('./patientpages/book-appointment/book-appointment').then(m => m.BookAppointment)
-      },
-      {
         path: 'appointments',
         loadComponent: () => import('./patientpages/appointments/appointments').then(m => m.MyAppointments)
       },
@@ -108,11 +107,10 @@ export const routes: Routes = [
       {
         path: 'profile',
         loadComponent: () => import('./patientpages/my-profile/my-profile').then(m => m.MyProfile)
-      },
-      {
-        path: 'feedback',
-        loadComponent: () => import('./patientpages/feedback/feedback').then(m => m.FeedbackStates)
       }
     ]
   },
+
+  // 4. UNKNOWN URLS
+  { path: '**', redirectTo: 'login' }
 ];

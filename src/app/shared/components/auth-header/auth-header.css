@@ -1,4 +1,14 @@
+/* Sticky top bar. The host element sticks (it is a direct child of the auth
+   layout's column); sticky on the inner <header> would have no room to move. */
+:host {
+  display: block;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
 .auth-header {
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.06);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -13,16 +23,24 @@
   gap: 9px;
 }
 
-.brand-icon {
-  color: #205486;
-  font-size: 28px;
-  font-weight: bold;
+/* logo2.png is 741x337 with transparent padding; the visible logo sits at
+   x 140-602, y 104-233 (462x129). Crop to that box and scale it to --logo-h. */
+.brand-logo {
+  --logo-h: 40px;
+  position: relative;
+  display: block;
+  height: var(--logo-h);
+  width: calc(var(--logo-h) * 462 / 129);
+  overflow: hidden;
 }
 
-.brand-name {
-  color: #205486;
-  font-size: 21px;
-  font-weight: 700;
+.brand-logo img {
+  position: absolute;
+  width: calc(var(--logo-h) * 741 / 129);
+  height: auto;
+  left: calc(var(--logo-h) * -140 / 129);
+  top: calc(var(--logo-h) * -104 / 129);
+  max-width: none;
 }
 
 .header-help {
@@ -41,6 +59,10 @@
 @media (max-width: 480px) {
   .auth-header {
     padding: 16px;
+  }
+
+  .brand-logo {
+    --logo-h: 30px;
   }
 
   .header-help {

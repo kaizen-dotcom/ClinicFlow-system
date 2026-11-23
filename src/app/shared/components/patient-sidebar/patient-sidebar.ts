@@ -1,6 +1,8 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
+import { AuthService } from '../../../auth/auth.service';
+import { BookingModalService } from '../../services/booking-modal.service';
 import {
   LucideDynamicIcon,
   LucideLayoutDashboard,
@@ -9,8 +11,8 @@ import {
   LucideCalendar,
   LucideBell,
   LucideUser,
-  LucidePlus,
-  LucideLogOut
+  LucideLogOut,
+  LucideArrowUpRight
 } from '@lucide/angular';
 
 @Component({
@@ -21,14 +23,17 @@ import {
   styleUrls: ['./patient-sidebar.css']
 })
 export class PatientSidebarComponent {
-  readonly PlusIcon = LucidePlus;
   readonly logoutIcon = LucideLogOut;
+  readonly ArrowUpRightIcon = LucideArrowUpRight;
   showLogoutConfirm = false;
+
+  constructor(private router: Router, private auth: AuthService, public booking: BookingModalService) {}
 
   menuItems = [
     { label: 'Dashboard', icon: LucideLayoutDashboard, route: '/patient/dashboard' },
     { label: 'Browse doctors', icon: LucideSearch, route: '/patient/browse-doctors' },
-    { label: 'Book appointment', icon: LucideCalendarPlus, route: '/patient/book-appointment' },
+    // No route: opens the booking modal instead of navigating.
+    { label: 'Book appointment', icon: LucideCalendarPlus, route: null },
     { label: 'My appointments', icon: LucideCalendar, route: '/patient/appointments' },
     { label: 'Notifications', icon: LucideBell, route: '/patient/notifications' },
     { label: 'My profile', icon: LucideUser, route: '/patient/profile' }
@@ -44,6 +49,7 @@ export class PatientSidebarComponent {
 
   logout(): void {
     this.showLogoutConfirm = false;
-    window.location.href = '/login';
+    this.auth.logout();
+    this.router.navigateByUrl('/login');
   }
 }

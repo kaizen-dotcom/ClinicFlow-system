@@ -1,0 +1,123 @@
+.backdrop {
+  position: fixed; inset: 0; z-index: 9999;
+  display: flex; align-items: center; justify-content: center;
+  padding: 16px;
+  background: rgba(15, 23, 42, 0.55);
+}
+
+.modal {
+  width: min(620px, 100%);
+  max-height: calc(100vh - 32px);
+  display: flex; flex-direction: column;
+  background: var(--bg-card);
+  border-radius: 14px;
+  box-shadow: 0 20px 45px rgba(15, 23, 42, 0.28);
+  color: var(--clinic-text);
+}
+
+.modal-header {
+  display: flex; justify-content: space-between; gap: 12px;
+  padding: 20px 24px 14px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.modal-header h2 { margin: 8px 0 2px; font-size: 1.25rem; color: var(--text-main); }
+.modal-header p { margin: 0; font-size: 0.8rem; color: var(--clinic-muted); }
+
+.icon-btn {
+  align-self: flex-start;
+  border: none; background: none; cursor: pointer;
+  font-size: 1.6rem; line-height: 1; color: var(--clinic-muted);
+}
+
+.modal-body {
+  display: flex; flex-direction: column; gap: 18px;
+  padding: 16px 24px;
+  overflow-y: auto;
+}
+
+h3 {
+  margin: 0 0 8px;
+  font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em;
+  color: var(--clinic-primary);
+}
+
+dl {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px;
+  margin: 0; font-size: 0.875rem;
+}
+
+dl.stack { grid-template-columns: 1fr; }
+dt { color: var(--clinic-muted); font-size: 0.78rem; margin-bottom: 2px; }
+dd { margin: 0; color: var(--text-main); font-weight: 500; line-height: 1.45; }
+dd small { display: block; color: var(--clinic-muted); font-weight: 400; }
+
+.badge {
+  display: inline-block;
+  padding: 3px 10px; border-radius: 999px;
+  font-size: 0.75rem; font-weight: 600;
+}
+
+.badge-approved { background: var(--badge-green-bg); color: var(--badge-green-text); }
+.badge-pending { background: var(--badge-amber-bg); color: var(--badge-amber-text); }
+.badge-completed { background: var(--badge-blue-bg); color: var(--badge-blue-text); }
+.badge-rejected { background: var(--badge-red-bg); color: var(--badge-red-text); }
+.badge-cancelled { background: var(--badge-gray-bg); color: var(--badge-gray-text); }
+
+.note {
+  padding: 10px 14px; border-radius: 10px;
+  font-size: 0.875rem; line-height: 1.5;
+  background: var(--clinic-bg); border-left: 4px solid var(--clinic-border-strong);
+}
+
+.note-approved { background: var(--success-bg); border-color: #10B981; }
+.note-pending { background: var(--warning-bg); border-color: #F59E0B; }
+.note-rejected { background: var(--danger-bg); border-color: #EF4444; }
+
+.timeline { list-style: none; margin: 0; padding: 0 0 0 14px; border-left: 2px solid var(--clinic-border); }
+.timeline li { position: relative; padding: 0 0 10px 8px; font-size: 0.85rem; }
+.timeline li::before {
+  content: ''; position: absolute; left: -20px; top: 4px;
+  width: 10px; height: 10px; border-radius: 50%;
+  background: var(--clinic-primary);
+}
+.timeline span { display: block; color: var(--clinic-muted); font-size: 0.78rem; }
+
+.cancel-box {
+  display: flex; flex-direction: column; gap: 6px;
+  padding: 12px 14px; border-radius: 10px;
+  background: var(--danger-bg); font-size: 0.85rem;
+}
+
+.cancel-box label { font-weight: 600; }
+.cancel-box p { margin: 0; color: var(--badge-red-text); }
+
+textarea {
+  font: inherit; font-size: 0.9rem; width: 100%; resize: vertical;
+  padding: 8px 10px; border: 1px solid var(--clinic-border); border-radius: 8px;
+  background: var(--bg-card); color: var(--text-main);
+}
+
+.modal-footer {
+  display: flex; justify-content: flex-end; gap: 10px;
+  padding: 14px 24px 18px;
+  border-top: 1px solid var(--border-color);
+}
+
+.btn-secondary, .btn-danger, .btn-danger-outline {
+  font: inherit; font-size: 14px; font-weight: 500;
+  padding: 8px 16px; border-radius: 6px; cursor: pointer;
+}
+
+.btn-secondary { border: 1px solid var(--clinic-border); background: var(--bg-card); color: var(--text-main); }
+.btn-danger { border: none; background: #dc2626; color: #fff; }
+.btn-danger-outline { border: 1px solid var(--danger-border); background: var(--bg-card); color: var(--danger-text); margin-right: auto; }
+.btn-secondary:hover { background: var(--clinic-bg); }
+.btn-danger:hover { background: #b91c1c; }
+.btn-danger-outline:hover { background: var(--danger-bg); }
+
+@media (max-width: 560px) {
+  dl { grid-template-columns: 1fr; }
+  .modal-header, .modal-body, .modal-footer { padding-left: 16px; padding-right: 16px; }
+  .modal-footer { flex-wrap: wrap; }
+}

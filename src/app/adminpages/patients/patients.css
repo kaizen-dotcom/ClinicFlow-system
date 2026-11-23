@@ -162,17 +162,6 @@
   align-items: center;
 }
 
-.action-link {
-  color: var(--clinic-primary);
-  text-decoration: none;
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.action-link:hover {
-  text-decoration: underline;
-}
-
 /* --- Status Badges --- */
 .badge {
   display: inline-flex;
@@ -232,3 +221,10 @@
   color: white;
   border-color: var(--clinic-primary);
 }
+.page-message { margin-bottom: 16px; }
+.page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.badge-pending { background: var(--badge-amber-bg); color: var(--badge-amber-text); }
+.badge-approved { background: var(--badge-blue-bg); color: var(--badge-blue-text); }
+.badge-completed { background: var(--badge-green-bg); color: var(--badge-green-text); }
+.badge-rejected { background: var(--badge-red-bg); color: var(--badge-red-text); }
+.badge-cancelled { background: var(--badge-gray-bg); color: var(--badge-gray-text); }

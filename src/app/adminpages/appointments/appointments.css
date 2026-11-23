@@ -67,6 +67,9 @@
 }
 
 .tab {
+  background: none;
+  border: none;
+  font-family: inherit;
   padding: 16px 0;
   margin-right: 32px;
   font-size: 14px;
@@ -135,6 +138,10 @@
 }
 
 .reset-link {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
   font-size: 13px;
   color: var(--clinic-primary);
   text-decoration: none;
@@ -189,32 +196,6 @@
 }
 
 /* Action Links */
-.action-link {
-  color: var(--clinic-primary);
-  text-decoration: none;
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.action-approve {
-  color: var(--primary-green);
-  text-decoration: none;
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.action-reject {
-  color: var(--badge-red-text);
-  text-decoration: none;
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.action-link:hover, 
-.action-approve:hover, 
-.action-reject:hover {
-  text-decoration: underline;
-}
 
 /* --- Status Badges --- */
 .badge {
@@ -290,3 +271,6 @@
   color: white;
   border-color: var(--clinic-primary);
 }
+.page-message { margin-bottom: 16px; }
+.page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.badge-default { background: var(--badge-gray-bg); color: var(--badge-gray-text); }

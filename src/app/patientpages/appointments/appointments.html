@@ -8,14 +8,14 @@
 <div class="tabs-bar">
   <div class="tabs">
     <div class="tab" 
-         *ngFor="let tab of tabs" 
+         *ngFor="let tab of tabs()" 
          [class.active]="activeTab === tab.value"
          (click)="setTab(tab.value)">
       {{ tab.label }}
       <span class="tab-count" *ngIf="tab.count">{{ tab.count }}</span>
     </div>
   </div>
-  <button class="btn-primary">Book appointment</button>
+  <button class="btn-primary" (click)="booking.open()">Book appointment</button>
 </div>
 
 <!-- Appointment Table -->
@@ -31,11 +31,11 @@
       </tr>
     </thead>
     <tbody>
-      <tr *ngFor="let appt of appointments">
+      <tr *ngFor="let appt of visible()">
         <td>
           <div class="date-cell">
-            <span class="date-main">{{ appt.date }}</span>
-            <span class="date-time">{{ appt.time }}</span>
+            <span class="date-main">{{ appt.date | date: 'dd MMM y' }}</span>
+            <span class="date-time">{{ appt.start }}–{{ appt.end }}</span>
           </div>
         </td>
         <td>
@@ -51,7 +51,10 @@
           </span>
         </td>
         <td>
-          <a [routerLink]="['/patient/feedback']" class="action-link">{{ appt.action }} &rarr;</a>
+          <button type="button" class="action-link" (click)="store.view(appt.id)">
+            {{ store.isUpcoming(appt) ? 'View / cancel' : 'View details' }}
+            <svg [lucideIcon]="ArrowRightIcon" size="16" class="arrow-icon" aria-hidden="true"></svg>
+          </button>
         </td>
       </tr>
     </tbody>
@@ -60,7 +63,7 @@
 
 <!-- Footer Note -->
 <p class="footer-note">
-  {{ appointments.length }} appointments · Upcoming first, then previous visits by date
+  {{ visible().length }} appointments · Upcoming first, then previous visits by date
 </p>
 
 <!-- Bottom Info Banner -->

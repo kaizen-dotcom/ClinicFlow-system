@@ -22,7 +22,7 @@
 
 /* --- Form Container --- */
 .profile-form-container {
-  background-color: white;
+  background-color: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: 8px;
   padding: 24px;
@@ -135,7 +135,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: #ccc;
+  background-color: var(--toggle-off);
   border-radius: 22px;
   transition: 0.3s;
 }
@@ -164,8 +164,8 @@
   gap: 16px;
 }
 .account-card {
-  background-color: #F0F7FF;
-  border: 1px solid #BAE0FD;
+  background-color: var(--info-bg);
+  border: 1px solid var(--info-border);
   border-radius: 8px;
   padding: 24px;
 }
@@ -194,7 +194,7 @@
 }
 .account-divider {
   height: 1px;
-  background-color: #BAE0FD;
+  background-color: var(--info-border);
   margin: 16px 0;
 }
 .account-note {
@@ -229,7 +229,7 @@
   background-color: var(--primary-green-hover);
 }
 .btn-outline {
-  background-color: white;
+  background-color: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: 6px;
   padding: 10px 20px;
@@ -241,3 +241,6 @@
 .btn-outline:hover {
   background-color: var(--bg-main);
 }
+.form-message { margin: 0 0 12px; padding: 10px 12px; border-radius: 8px; font-size: 13px; }
+.form-message.success { background: var(--success-bg); color: var(--success-text); }
+.form-message.failure { background: var(--danger-bg); color: var(--danger-text); }

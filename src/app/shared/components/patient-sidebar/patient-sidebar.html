@@ -1,7 +1,7 @@
 <aside class="sidebar">
   <div class="sidebar-brand">
     <div class="logo-icon">
-      <svg [lucideIcon]="PlusIcon" size="24"></svg>
+      <img src="assets/logo.png" alt="ClinicFlow logo" />
     </div>
     <div class="brand-text">
       <h1>ClinicFlow</h1>
@@ -12,10 +12,17 @@
   <nav class="sidebar-nav">
     <ul>
       <li *ngFor="let item of menuItems">
-        <a [routerLink]="item.route" routerLinkActive="active" class="nav-link">
+        <a *ngIf="item.route; else bookButton" [routerLink]="item.route" routerLinkActive="active" class="nav-link">
           <svg [lucideIcon]="item.icon" size="18"></svg>
           {{ item.label }}
         </a>
+        <!-- Items without a route (Book appointment) open the booking modal -->
+        <ng-template #bookButton>
+          <button type="button" class="nav-link nav-button" (click)="booking.open()">
+            <svg [lucideIcon]="item.icon" size="18"></svg>
+            {{ item.label }}
+          </button>
+        </ng-template>
       </li>
 
       <li>
@@ -30,7 +37,7 @@
   <div class="sidebar-footer">
     <div class="help-box">
       <h4>Need a hand?</h4>
-      <a href="#">Contact the clinic &nearr;</a>
+      <a href="mailto:support@clinicflow.com">Contact the clinic <svg [lucideIcon]="ArrowUpRightIcon" size="14" class="arrow-icon" aria-hidden="true"></svg></a>
     </div>
     <div class="version-info">
       ClinicFlow &middot; Patient v1.0

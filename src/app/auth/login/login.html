@@ -60,11 +60,23 @@
           <span>Remember me</span>
         </label>
 
-        <a routerLink="/forgot-password">
+        <a href="#" (click)="$event.preventDefault(); showResetHelp.set(!showResetHelp())">
           Forgot password?
         </a>
 
       </div>
+
+      @if (showResetHelp()) {
+        <p class="login-info" role="status">
+          To reset your password, contact the clinic front desk at
+          <a href="mailto:support@clinicflow.com">support&#64;clinicflow.com</a> or +1 (212) 555-0100.
+          We'll verify your identity and send you a reset link.
+        </p>
+      }
+
+      @if (error()) {
+        <p class="login-error" role="alert">{{ error() }}</p>
+      }
 
       <!-- Login Button -->
       <button type="submit" class="login-button">

@@ -1,14 +1,21 @@
+/* The host element is what sticks: it is a direct child of the scrolling column.
+   (Sticky on the inner <header> did nothing, since the host was only as tall as the header.) */
+:host {
+  display: block;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
 .navbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background-color: #E3EEF9; /* Light blue from Figma */
+  background-color: var(--navbar-bg); /* Light blue from Figma */
   height: 70px;
   padding: 0 32px;
   border-bottom: 1px solid var(--border-color);
-  position: sticky;
-  top: 0;
-  z-index: 10;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.06);
 }
 
 .nav-left {
@@ -25,6 +32,30 @@
 .nav-right {
   display: flex;
   align-items: center;
+  gap: 12px;
+}
+
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  color: var(--clinic-primary);
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.theme-toggle:hover {
+  background: var(--navbar-hover);
+}
+
+.theme-toggle:focus-visible {
+  outline: 2px solid var(--clinic-primary);
+  outline-offset: 2px;
 }
 
 .profile-menu {
@@ -38,7 +69,7 @@
 }
 
 .profile-menu:hover {
-  background-color: rgba(255, 255, 255, 0.5);
+  background-color: var(--navbar-hover);
 }
 
 .profile-info {
@@ -61,4 +92,23 @@
 
 .chevron {
   color: var(--text-muted);
+}
+.profile-menu { text-decoration: none; }
+
+.bell { position: relative; text-decoration: none; }
+
+.bell-count {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: #dc2626;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
 }

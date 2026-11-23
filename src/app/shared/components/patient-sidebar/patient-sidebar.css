@@ -16,14 +16,22 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 .logo-icon {
-  background-color: white;
-  color: var(--sidebar-bg);
   width: 36px;
   height: 36px;
   border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+/* logo.png has ~20% transparent padding on each side; scale it up so the
+   teal tile fills the 36px box and the padding is cropped away. */
+.logo-icon img {
+  width: 60px;
+  height: 60px;
+  flex-shrink: 0;
+  display: block;
 }
 .brand-text h1 {
   font-size: 18px;
@@ -104,6 +112,15 @@
   color: var(--sidebar-text);
   opacity: 0.7;
 }
+.nav-button {
+  background: transparent;
+  border: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: inherit;
+}
 .logout-link {
   background: transparent;
   border: none;
@@ -129,22 +146,22 @@
 }
 .logout-modal {
   width: min(360px, calc(100% - 32px));
-  background: #ffffff;
+  background: var(--bg-card);
   border-radius: 14px;
   padding: 24px 22px 18px;
   box-shadow: 0 20px 45px rgba(15, 23, 42, 0.28);
-  color: #1f2937;
+  color: var(--text-main);
 }
 .logout-modal h3 {
   margin: 0 0 12px;
   font-size: 1.25rem;
   font-weight: 700;
-  color: #111827;
+  color: var(--text-main);
 }
 .logout-modal p {
   margin: 0 0 20px;
   font-size: 0.96rem;
-  color: #4b5563;
+  color: var(--text-muted);
   line-height: 1.5;
 }
 .logout-modal-actions {
@@ -162,11 +179,11 @@
   transition: all 0.2s ease;
 }
 .cancel-btn {
-  background: #e5e7eb;
-  color: #111827;
+  background: var(--neutral-btn-bg);
+  color: var(--text-main);
 }
 .cancel-btn:hover {
-  background: #d1d5db;
+  background: var(--neutral-btn-hover);
 }
 .confirm-btn {
   background: #dc2626;

@@ -5,10 +5,11 @@
 </div>
 
 <!-- Next Visit Highlight Card -->
+@if (nextVisit(); as nextVisit) {
 <div class="next-visit-card">
   <div class="next-visit-header">
     <span class="eyebrow">YOUR NEXT VISIT</span>
-    <span class="badge badge-approved">{{ nextVisit.status }}</span>
+    <span class="badge" [ngClass]="getStatusClass(nextVisit.status)">{{ nextVisit.status }}</span>
   </div>
 
   <h2 class="visit-title">{{ nextVisit.type }}</h2>
@@ -17,11 +18,11 @@
   <div class="visit-details-grid">
     <div class="detail-item">
       <span class="detail-label">Date</span>
-      <span class="detail-value">{{ nextVisit.date }}</span>
+      <span class="detail-value">{{ nextVisit.date | date: 'EEEE, d MMMM' }}</span>
     </div>
     <div class="detail-item">
       <span class="detail-label">Time</span>
-      <span class="detail-value">{{ nextVisit.time }}</span>
+      <span class="detail-value">{{ nextVisit.start }}–{{ nextVisit.end }}</span>
     </div>
     <div class="detail-item">
       <span class="detail-label">Location</span>
@@ -29,36 +30,38 @@
     </div>
   </div>
 
-  <p class="visit-note">{{ nextVisit.note }}</p>
+  <p class="visit-note">{{ nextVisit.clinicNote }}</p>
 
   <div class="visit-action">
-    <button class="btn-outline">View appointment</button>
+    <button class="btn-outline" (click)="store.view(nextVisit.id)">View appointment</button>
   </div>
 </div>
+}
 
 <!-- Stats Row -->
 <div class="stats-row">
-  <div class="stat-block" *ngFor="let stat of stats">
+  <div class="stat-block" *ngFor="let stat of stats()">
     <div class="stat-number">{{ stat.value }}</div>
     <div class="stat-label">{{ stat.label }}</div>
   </div>
 </div>
 
-<!-- Appointment Activity -->
+<!-- Appointment Activity (click an item to view its details) -->
 <div class="activity-section">
   <div class="section-header">
     <h2>Appointment activity</h2>
-    <a href="#" class="view-all">View all appointments &rarr;</a>
+    <a routerLink="/patient/appointments" class="view-all">View all appointments <svg [lucideIcon]="ArrowRightIcon" size="16" class="arrow-icon" aria-hidden="true"></svg></a>
   </div>
   
   <div class="activity-list">
-    <div class="activity-item" *ngFor="let act of recentActivity">
+    <div class="activity-item clickable" *ngFor="let act of recentActivity()" role="button" tabindex="0"
+         (click)="store.view(act.id)" (keydown.enter)="store.view(act.id)">
       <div class="activity-main">
         <span class="activity-type">{{ act.type }}</span>
         <span class="activity-doctor">{{ act.doctor }}</span>
       </div>
       <div class="activity-right">
-        <span class="activity-date">{{ act.date }}</span>
+        <span class="activity-date">{{ act.date | date: 'd MMM' }} · {{ act.start }}</span>
         <span class="badge" [ngClass]="getStatusClass(act.status)">{{ act.status }}</span>
       </div>
     </div>
@@ -71,5 +74,5 @@
     <h3>Good care starts with the right doctor.</h3>
     <p>Browse specialists and choose an available appointment.</p>
   </div>
-  <button class="btn-primary">Book appointment</button>
+  <button class="btn-primary" (click)="booking.open()">Book appointment</button>
 </div>

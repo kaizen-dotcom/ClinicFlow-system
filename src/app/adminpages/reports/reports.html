@@ -4,71 +4,79 @@
     <h1>Reports</h1>
     <p class="subtitle">Understand appointment trends and clinic performance.</p>
   </div>
-  <button class="btn-primary">Export report</button>
+  <button class="btn-primary" (click)="exportReport()">Export report (CSV)</button>
 </div>
 
 <!-- Filter Bar -->
 <div class="filter-bar">
-  <select class="filter-select"><option>01 – 30 Nov 2026</option></select>
-  <select class="filter-select"><option>All doctors</option></select>
-  <select class="filter-select"><option>All specialities</option></select>
+  <select class="filter-select" aria-label="Month" [ngModel]="month()" (ngModelChange)="month.set($event)">
+    @for (m of months(); track m) { <option [value]="m">{{ m + '-01' | date: 'MMMM y' }}</option> }
+  </select>
+  <select class="filter-select" aria-label="Doctor" [ngModel]="doctorId()" (ngModelChange)="doctorId.set($event)">
+    <option value="">All doctors</option>
+    @for (d of clinic.doctors(); track d.id) { <option [value]="d.id">{{ d.name }}</option> }
+  </select>
+  <select class="filter-select" aria-label="Specialty" [ngModel]="specialty()" (ngModelChange)="specialty.set($event)">
+    <option value="">All specialties</option>
+    @for (s of clinic.specialties(); track s) { <option [value]="s">{{ s }}</option> }
+  </select>
 </div>
 
 <!-- 1. Stat Cards -->
 <div class="stats-grid">
-  <div class="stat-card" *ngFor="let stat of statCards">
-    <span class="stat-label">{{ stat.label }}</span>
-    <div class="stat-value">{{ stat.value }}</div>
-  </div>
+  @for (stat of statCards(); track stat.label) {
+    <div class="stat-card">
+      <span class="stat-label">{{ stat.label }}</span>
+      <div class="stat-value">{{ stat.value }}</div>
+    </div>
+  }
 </div>
 
 <!-- Charts Row -->
 <div class="charts-grid">
-  
-  <!-- Bar Chart Container -->
+
+  <!-- Bar Chart -->
   <div class="chart-card">
     <div class="chart-header">
       <div>
         <h2>Appointments by day</h2>
-        <p class="chart-subtitle">1–10 November 2026 · 248 appointments</p>
+        <p class="chart-subtitle">{{ month() + '-01' | date: 'MMMM y' }} · {{ rows().length }} appointments</p>
       </div>
     </div>
-    
+
     <div class="bar-chart-wrapper">
-      <!-- Y-axis -->
       <div class="y-axis">
-        <span>40</span>
-        <span>30</span>
-        <span>20</span>
-        <span>10</span>
-        <span>0</span>
+        @for (v of bars().axis; track $index) { <span>{{ v }}</span> }
       </div>
-      <!-- Bars -->
       <div class="bars-container">
-        <div class="bar-group" *ngFor="let bar of barChartData">
-          <div class="bar" [style.height]="bar.height"></div>
-          <span class="x-label">{{ bar.day }}</span>
-        </div>
+        @for (bar of bars().items; track bar.day) {
+          <div class="bar-group" [attr.title]="bar.day + ': ' + bar.count + ' appointment' + (bar.count === 1 ? '' : 's')">
+            <div class="bar" [style.height]="bar.height"></div>
+            @if (bar.showLabel) { <span class="x-label">{{ bar.day }}</span> }
+          </div>
+        }
       </div>
     </div>
   </div>
 
-  <!-- Status Breakdown Container -->
+  <!-- Status Breakdown -->
   <div class="chart-card">
     <div class="chart-header">
       <h2>Appointment status</h2>
     </div>
     <div class="status-list">
-      <div class="status-row" *ngFor="let status of statusData">
-        <div class="status-info">
-          <span class="status-label">{{ status.label }}</span>
-          <span class="status-count">{{ status.count }}</span>
-          <span class="status-percent">{{ status.percent }}</span>
+      @for (status of statusData(); track status.label) {
+        <div class="status-row">
+          <div class="status-info">
+            <span class="status-label">{{ status.label }}</span>
+            <span class="status-count">{{ status.count }}</span>
+            <span class="status-percent">{{ status.percent }}</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" [style.width]="status.percent" [style.background-color]="status.color"></div>
+          </div>
         </div>
-        <div class="progress-track">
-          <div class="progress-fill" [style.width]="status.percent" [style.background-color]="status.color"></div>
-        </div>
-      </div>
+      }
     </div>
   </div>
 
@@ -91,13 +99,17 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let doc of doctorsSummary">
-          <td class="font-medium">{{ doc.doctor }}</td>
-          <td>{{ doc.total }}</td>
-          <td>{{ doc.completed }}</td>
-          <td>{{ doc.approved }}</td>
-          <td>{{ doc.other }}</td>
-        </tr>
+        @for (doc of doctorsSummary(); track doc.doctor) {
+          <tr>
+            <td class="font-medium">{{ doc.doctor }} <span class="text-muted">· {{ doc.specialty }}</span></td>
+            <td>{{ doc.total }}</td>
+            <td>{{ doc.completed }}</td>
+            <td>{{ doc.approved }}</td>
+            <td>{{ doc.other }}</td>
+          </tr>
+        } @empty {
+          <tr><td colspan="5" class="cf-empty">No appointments for this period.</td></tr>
+        }
       </tbody>
     </table>
   </div>

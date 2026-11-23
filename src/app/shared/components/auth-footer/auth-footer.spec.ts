@@ -1,3 +1,4 @@
+import { provideRouter } from '@angular/router';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { AuthFooter } from './auth-footer';
 
@@ -8,6 +9,7 @@ describe('AuthFooter', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [AuthFooter],
+      providers: [provideRouter([])],
     }).compileComponents();
 
     fixture = TestBed.createComponent(AuthFooter);

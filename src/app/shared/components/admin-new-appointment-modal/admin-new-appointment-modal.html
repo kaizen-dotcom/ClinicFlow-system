@@ -1,0 +1,104 @@
+@if (ui.newAppointmentOpen()) {
+  <div class="cf-backdrop" (click)="close()">
+    <div class="cf-modal" role="dialog" aria-modal="true" aria-labelledby="na-title" (click)="$event.stopPropagation()">
+
+      <header class="cf-modal-header">
+        <div>
+          <h2 id="na-title">New appointment</h2>
+          <p>Book on a patient's behalf. Appointments booked by staff are approved immediately.</p>
+        </div>
+        <button type="button" class="cf-close" aria-label="Close" (click)="close()">&times;</button>
+      </header>
+
+      @if (createdId) {
+        <div class="cf-modal-body">
+          <p class="cf-alert cf-alert-success" role="status">Appointment {{ createdId }} booked and approved. The patient has been notified.</p>
+        </div>
+        <footer class="cf-modal-footer">
+          <button type="button" class="btn-secondary" (click)="openCreated()">View appointment</button>
+          <button type="button" class="btn-primary" (click)="close()">Done</button>
+        </footer>
+      } @else {
+        <form #f="ngForm" (ngSubmit)="submit(f)" novalidate>
+          <div class="cf-modal-body">
+            <div class="cf-grid">
+              <label class="cf-field cf-span-2">
+                <span>Patient *</span>
+                <select name="patientId" [(ngModel)]="form.patientId" required #pat="ngModel">
+                  <option value="" disabled>Select a patient</option>
+                  @for (p of activePatients(); track p.id) {
+                    <option [value]="p.id">{{ p.fullName }} · {{ p.id }} · {{ p.phone }}</option>
+                  }
+                </select>
+                @if (submitted && pat.invalid) { <small class="cf-error">Choose a patient.</small> }
+              </label>
+
+              <label class="cf-field">
+                <span>Doctor *</span>
+                <select name="doctorId" [(ngModel)]="form.doctorId" (ngModelChange)="onDoctorChange()" required #doc="ngModel">
+                  <option value="" disabled>Select a doctor</option>
+                  @for (d of clinic.activeDoctors(); track d.id) {
+                    <option [value]="d.id">{{ d.name }} · {{ d.specialty }}</option>
+                  }
+                </select>
+                @if (submitted && doc.invalid) { <small class="cf-error">Choose a doctor.</small> }
+              </label>
+
+              <label class="cf-field">
+                <span>Appointment type *</span>
+                <select name="type" [(ngModel)]="form.type" required>
+                  @for (t of types; track t) { <option>{{ t }}</option> }
+                </select>
+              </label>
+            </div>
+
+            @if (form.doctorId) {
+              @if (dates.length) {
+                <div class="cf-field">
+                  <span>Date *</span>
+                  <div class="cf-chips">
+                    @for (d of dates; track d) {
+                      <button type="button" class="cf-chip" [class.selected]="form.date === d" (click)="selectDate(d)">{{ d | date: 'EEE d MMM' }}</button>
+                    }
+                  </div>
+                </div>
+                <div class="cf-field">
+                  <span>Time *</span>
+                  <div class="cf-chips">
+                    @for (s of slots; track s.time) {
+                      <button type="button" class="cf-chip" [class.selected]="form.time === s.time" [disabled]="!s.available"
+                              (click)="form.time = s.time">{{ s.label }}</button>
+                    }
+                  </div>
+                  @if (submitted && !form.time) { <small class="cf-error">Choose a time.</small> }
+                </div>
+              } @else {
+                <p class="cf-alert cf-alert-info">This doctor has no open slots in the next 60 days. Add availability under Schedules.</p>
+              }
+            }
+
+            <label class="cf-field">
+              <span>Reason for visit *</span>
+              <textarea name="reason" rows="2" [(ngModel)]="form.reason" required #reason="ngModel"></textarea>
+              @if (submitted && reason.invalid) { <small class="cf-error">Reason is required.</small> }
+            </label>
+            <label class="cf-field">
+              <span>Allergies / medications (optional)</span>
+              <textarea name="notes" rows="2" [(ngModel)]="form.notes"></textarea>
+            </label>
+            <label class="cf-check">
+              <input type="checkbox" name="firstVisit" [(ngModel)]="form.firstVisit" /> First visit with this doctor
+            </label>
+
+            @if (error) { <p class="cf-alert cf-alert-error" role="alert">{{ error }}</p> }
+          </div>
+
+          <footer class="cf-modal-footer">
+            <button type="button" class="btn-secondary" (click)="close()">Cancel</button>
+            <button type="submit" class="btn-primary">Book appointment</button>
+          </footer>
+        </form>
+      }
+    </div>
+  </div>
+}

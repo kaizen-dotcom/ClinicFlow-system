@@ -1,3 +1,4 @@
+import { provideRouter } from '@angular/router';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { AuthHeader } from './auth-header';
 
@@ -8,6 +9,7 @@ describe('AuthHeader', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [AuthHeader],
+      providers: [provideRouter([])],
     }).compileComponents();
 
     fixture = TestBed.createComponent(AuthHeader);

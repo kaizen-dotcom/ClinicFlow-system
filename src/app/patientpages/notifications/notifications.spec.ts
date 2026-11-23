@@ -1,3 +1,4 @@
+import { provideRouter } from '@angular/router';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Notifications } from './notifications';
 
@@ -8,6 +9,7 @@ describe('Notifications', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [Notifications],
+      providers: [provideRouter([])],
     }).compileComponents();
 
     fixture = TestBed.createComponent(Notifications);

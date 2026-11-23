@@ -172,3 +172,27 @@
     font-size: 23px;
   }
 }
+
+.login-error {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #fef2f2;
+  color: #b91c1c;
+  font-size: 0.875rem;
+}
+
+.login-info {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #f0f7ff;
+  color: #205486;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.login-info a {
+  color: #205486;
+  font-weight: 600;
+}

@@ -1,6 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, NgForm } from '@angular/forms';
+import { ClinicStore } from '../../shared/services/clinic-store.service';
+import { PatientAppointmentsService } from '../../shared/services/patient-appointments.service';
 
 @Component({
   selector: 'app-my-profile',
@@ -10,23 +12,55 @@ import { FormsModule } from '@angular/forms';
   styleUrl: './my-profile.css'
 })
 export class MyProfile {
-  // Personal information form data
-  profile = {
-    firstName: 'Emma',
-    lastName: 'Wilson',
-    dob: '1992-03-14',
-    gender: 'Female',
-    email: 'emma.wilson@example.com',
-    phone: '+1 (555) 014-2086',
-    address: '24 Oak Street, Springfield'
-  };
+  private readonly clinic = inject(ClinicStore);
+  readonly mine = inject(PatientAppointmentsService);
 
-  // Patient account info
-  account = {
-    patientId: 'CF-1024',
-    registeredSince: 'October 2026'
-  };
+  profile = this.fromStore();
+  emailUpdatesEnabled = this.mine.patient.emailUpdates;
+  message = '';
+  error = '';
 
-  // Notification toggle
-  emailUpdatesEnabled = true;
+  save(form: NgForm) {
+    this.message = '';
+    this.error = '';
+    if (form.invalid) {
+      this.error = 'Please fill in all required fields with valid values.';
+      return;
+    }
+    const result = this.clinic.updatePatient(this.mine.patient.id, {
+      fullName: `${this.profile.firstName.trim()} ${this.profile.lastName.trim()}`.trim(),
+      dob: this.profile.dob,
+      gender: this.profile.gender,
+      email: this.profile.email,
+      phone: this.profile.phone.trim(),
+      address: this.profile.address.trim()
+    });
+    if (result.ok) {
+      this.message = 'Your profile has been saved.';
+      form.form.markAsPristine();
+    } else {
+      this.error = result.error;
+    }
+  }
+
+  discard(form: NgForm) {
+    this.profile = this.fromStore();
+    this.message = '';
+    this.error = '';
+    form.form.markAsPristine();
+  }
+
+  toggleEmailUpdates(enabled: boolean) {
+    this.emailUpdatesEnabled = enabled;
+    this.clinic.updatePatient(this.mine.patient.id, { emailUpdates: enabled });
+  }
+
+  private fromStore() {
+    const p = this.mine.patient;
+    const [firstName, ...rest] = p.fullName.split(' ');
+    return {
+      firstName: firstName ?? '', lastName: rest.join(' '), dob: p.dob, gender: p.gender || 'Prefer not to say',
+      email: p.email, phone: p.phone, address: p.address
+    };
+  }
 }

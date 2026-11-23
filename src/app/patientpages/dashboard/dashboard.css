@@ -15,7 +15,7 @@
 
 /* --- Next Visit Card --- */
 .next-visit-card {
-  background-color: white;
+  background-color: var(--bg-card);
   border: 1px solid var(--border-color);
   border-left: 4px solid var(--primary-green);
   border-radius: 8px;
@@ -133,7 +133,7 @@
   text-decoration: underline;
 }
 .activity-list {
-  background-color: white;
+  background-color: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: 8px;
   overflow: hidden;
@@ -174,7 +174,7 @@
 
 /* --- CTA Banner --- */
 .cta-banner {
-  background-color: #E8F5E9;
+  background-color: var(--success-bg);
   border-radius: 8px;
   padding: 24px;
   display: flex;
@@ -194,7 +194,7 @@
 
 /* --- Buttons & Badges --- */
 .btn-outline {
-  background-color: white;
+  background-color: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: 6px;
   padding: 8px 16px;
@@ -225,6 +225,8 @@
   font-size: 12px;
   font-weight: 500;
 }
-.badge-approved { background-color: #D1FAE5; color: #065F46; }
-.badge-pending { background-color: #FEF3C7; color: #92400E; }
-.badge-default { background-color: #F1F5F9; color: #475569; }
+.badge-approved { background-color: var(--badge-green-bg); color: var(--badge-green-text); }
+.badge-pending { background-color: var(--badge-amber-bg); color: var(--badge-amber-text); }
+.badge-default { background-color: var(--badge-gray-bg); color: var(--badge-gray-text); }
+.activity-item.clickable { cursor: pointer; }
+.activity-item.clickable:hover { background-color: var(--clinic-bg); }

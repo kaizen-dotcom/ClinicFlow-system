@@ -1,6 +1,14 @@
-import { Component } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ClinicStore } from '../../shared/services/clinic-store.service';
+import { APPOINTMENT_STATUSES } from '../../shared/services/clinic.models';
+import { downloadCsv } from '../../shared/utils/csv';
+import { todayISO } from '../../shared/utils/time';
+
+const STATUS_COLORS: Record<string, string> = {
+  Completed: '#138A4B', Approved: '#3B82F6', Pending: '#F59E0B', Cancelled: '#64748B', Rejected: '#EF4444'
+};
 
 @Component({
   selector: 'app-reports',
@@ -10,44 +18,88 @@ import { FormsModule } from '@angular/forms';
   styleUrl: './reports.css'
 })
 export class Reports {
-  // 1. Top Stat Cards
-  statCards = [
-    { label: 'Total appointments', value: '248' },
-    { label: 'Completed', value: '162' },
-    { label: 'Cancelled', value: '10' },
-    { label: 'Pending review', value: '08' }
-  ];
+  readonly clinic = inject(ClinicStore);
 
-  // 2. Bar Chart Data (Mocking the 10 days)
-  barChartData = [
-    { day: '01', count: 18, height: '45%' },
-    { day: '02', count: 22, height: '55%' },
-    { day: '03', count: 26, height: '65%' },
-    { day: '04', count: 24, height: '60%' },
-    { day: '05', count: 30, height: '75%' },
-    { day: '06', count: 20, height: '50%' },
-    { day: '07', count: 28, height: '70%' },
-    { day: '08', count: 34, height: '85%' },
-    { day: '09', count: 32, height: '80%' },
-    { day: '10', count: 38, height: '95%' }
-  ];
+  readonly month = signal(todayISO().slice(0, 7));   // "YYYY-MM"
+  readonly doctorId = signal('');
+  readonly specialty = signal('');
 
-  // 3. Status Breakdown Data
-  statusData = [
-    { label: 'Completed', count: 162, percent: '65.3%', color: '#138A4B' }, // Green
-    { label: 'Approved', count: 64, percent: '25.8%', color: '#3B82F6' },  // Blue
-    { label: 'Pending', count: 8, percent: '3.2%', color: '#F59E0B' },     // Amber
-    { label: 'Cancelled', count: 10, percent: '4.0%', color: '#64748B' },  // Gray
-    { label: 'Rejected', count: 4, percent: '1.6%', color: '#EF4444' }     // Red
-  ];
+  readonly months = computed(() =>
+    [...new Set([todayISO().slice(0, 7), ...this.clinic.appointments().map(a => a.date.slice(0, 7))])].sort().reverse()
+  );
 
-  // 4. Summary Table Data
-  doctorsSummary = [
-    { doctor: 'Dr. Amelia Brooks', total: 60, completed: 42, approved: 14, other: 4 },
-    { doctor: 'Dr. Daniel Kim', total: 48, completed: 33, approved: 12, other: 3 },
-    { doctor: 'Dr. Maya Patel', total: 42, completed: 28, approved: 10, other: 4 },
-    { doctor: 'Dr. Elena Garcia', total: 36, completed: 24, approved: 9, other: 3 },
-    { doctor: 'Dr. Oliver Chen', total: 34, completed: 20, approved: 10, other: 4 },
-    { doctor: 'Other doctors', total: 28, completed: 15, approved: 9, other: 4 }
-  ];
+  /** Appointments in the selected month matching the doctor/specialty filters. */
+  readonly rows = computed(() =>
+    this.clinic.appointments().filter(a =>
+      a.date.startsWith(this.month()) &&
+      (!this.doctorId() || a.doctorId === this.doctorId()) &&
+      (!this.specialty() || a.specialty === this.specialty())
+    )
+  );
+
+  readonly statCards = computed(() => {
+    const r = this.rows();
+    const n = (s: string) => r.filter(a => a.status === s).length;
+    const decided = n('Approved') + n('Completed') + n('Rejected');
+    return [
+      { label: 'Total appointments', value: r.length },
+      { label: 'Completed', value: n('Completed') },
+      { label: 'Cancelled', value: n('Cancelled') },
+      { label: 'Pending review', value: n('Pending') },
+      { label: 'Approval rate', value: decided ? Math.round(((decided - n('Rejected')) / decided) * 100) + '%' : '—' }
+    ];
+  });
+
+  /** One bar per day of the month. */
+  readonly bars = computed(() => {
+    const [y, m] = this.month().split('-').map(Number);
+    const daysInMonth = new Date(y, m, 0).getDate();
+    const counts = Array.from({ length: daysInMonth }, (_, i) => {
+      const day = `${this.month()}-${String(i + 1).padStart(2, '0')}`;
+      return this.rows().filter(a => a.date === day).length;
+    });
+    const max = Math.max(4, ...counts);
+    const top = Math.ceil(max / 4) * 4;
+    return {
+      top,
+      axis: [top, (top * 3) / 4, top / 2, top / 4, 0],
+      items: counts.map((count, i) => ({ day: i + 1, count, height: (count / top) * 100 + '%', showLabel: i === 0 || (i + 1) % 5 === 0 }))
+    };
+  });
+
+  readonly statusData = computed(() => {
+    const total = this.rows().length;
+    return APPOINTMENT_STATUSES.map(s => {
+      const count = this.rows().filter(a => a.status === s).length;
+      const pct = total ? (count / total) * 100 : 0;
+      return { label: s, count, percent: pct.toFixed(1) + '%', color: STATUS_COLORS[s] };
+    });
+  });
+
+  readonly doctorsSummary = computed(() =>
+    this.clinic.doctors()
+      .map(d => {
+        const r = this.rows().filter(a => a.doctorId === d.id);
+        const completed = r.filter(a => a.status === 'Completed').length;
+        const approved = r.filter(a => a.status === 'Approved').length;
+        return { doctor: d.name, specialty: d.specialty, total: r.length, completed, approved, other: r.length - completed - approved };
+      })
+      .filter(d => d.total > 0)
+      .sort((a, b) => b.total - a.total)
+  );
+
+  exportReport() {
+    downloadCsv(`clinicflow-report-${this.month()}.csv`, [
+      ['Report month', this.month()],
+      [],
+      ['Doctor', 'Specialty', 'Total', 'Completed', 'Approved', 'Other statuses'],
+      ...this.doctorsSummary().map(d => [d.doctor, d.specialty, d.total, d.completed, d.approved, d.other]),
+      [],
+      ['Status', 'Count', 'Share'],
+      ...this.statusData().map(s => [s.label, s.count, s.percent]),
+      [],
+      ['Appointment', 'Date', 'Time', 'Patient', 'Doctor', 'Type', 'Status'],
+      ...this.rows().map(a => [a.id, a.date, a.start, a.patient, a.doctor, a.type, a.status])
+    ]);
+  }
 }

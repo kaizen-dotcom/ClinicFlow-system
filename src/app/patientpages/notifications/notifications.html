@@ -7,33 +7,43 @@
 <!-- Tabs Bar -->
 <div class="tabs-bar">
   <div class="tabs">
-    <div class="tab" [class.active]="activeTab === 'all'" (click)="setTab('all')">
+    <div class="tab" [class.active]="activeTab() === 'all'" (click)="setTab('all')">
       All notifications
     </div>
-    <div class="tab" [class.active]="activeTab === 'unread'" (click)="setTab('unread')">
+    <div class="tab" [class.active]="activeTab() === 'unread'" (click)="setTab('unread')">
       Unread
-      <span class="tab-count">{{ unreadCount }}</span>
+      @if (mine.unreadCount()) { <span class="tab-count">{{ mine.unreadCount() }}</span> }
     </div>
   </div>
-  <a href="#" class="mark-read" (click)="markAllAsRead(); $event.preventDefault()">Mark all as read</a>
+  @if (mine.unreadCount()) {
+    <button type="button" class="mark-read" (click)="markAllAsRead()">Mark all as read</button>
+  }
 </div>
 
 <!-- Notification List -->
 <div class="notification-list">
-  <div class="notification-item" 
-       *ngFor="let notif of notifications"
-       [class.unread]="notif.unread"
-       [class.hidden]="activeTab === 'unread' && !notif.unread">
-    <div class="notif-header">
-      <span class="notif-type">{{ notif.type }}</span>
-      <span class="notif-time">{{ notif.time }}</span>
+  @for (notif of visible(); track notif.id) {
+    <div class="notification-item" [class.unread]="!notif.read">
+      <div class="notif-header">
+        <span class="notif-type">{{ notif.type }}</span>
+        <span class="notif-time">{{ notif.createdAt | date: 'd MMM · h:mm a' }}</span>
+      </div>
+      <h3 class="notif-title">{{ notif.title }}</h3>
+      <p class="notif-doctor">{{ notif.subtitle }}</p>
+      <p class="notif-message">{{ notif.message }}</p>
+      <button type="button" class="notif-action" (click)="open(notif)">
+        {{ label(notif) }}
+        <svg [lucideIcon]="ArrowRightIcon" size="16" class="arrow-icon" aria-hidden="true"></svg>
+      </button>
     </div>
-    <h3 class="notif-title">{{ notif.title }}</h3>
-    <p class="notif-doctor">{{ notif.doctor }}</p>
-    <p class="notif-message">{{ notif.message }}</p>
-    <a href="#" class="notif-action">{{ notif.action }}</a>
-  </div>
+  }
 </div>
 
 <!-- Footer Note -->
-<p class="footer-note">You're up to date. New appointment updates will appear here.</p>
+<p class="footer-note">
+  @if (visible().length) {
+    You're up to date. New appointment updates will appear here.
+  } @else {
+    {{ activeTab() === 'unread' ? 'No unread notifications.' : 'No notifications yet. Updates about your appointments will appear here.' }}
+  }
+</p>

@@ -5,26 +5,32 @@
 </div>
 
 <!-- Search & Filter Bar -->
-<div class="search-bar">
-  <input 
-    type="text" 
-    class="search-input" 
+<!-- Results filter as you type; the button just submits (e.g. on Enter). -->
+<form class="search-bar" (ngSubmit)="0">
+  <input
+    type="search"
+    class="search-input"
+    name="searchQuery"
     placeholder="Search by doctor name or specialty"
+    aria-label="Search doctors"
     [(ngModel)]="searchQuery">
-  
-  <select class="specialty-select" [(ngModel)]="selectedSpecialty">
-    <option *ngFor="let s of specialties">{{ s }}</option>
+
+  <select class="specialty-select" name="specialty" aria-label="Specialty" [(ngModel)]="selectedSpecialty">
+    <option *ngFor="let s of specialties" [value]="s">{{ s }}</option>
   </select>
-  
-  <button class="btn-primary">Search</button>
-</div>
+
+  <button type="submit" class="btn-primary">Search</button>
+</form>
 
 <!-- Result Count -->
-<p class="result-count">{{ doctors.length }} doctors available · In-person consultations</p>
+<p class="result-count">
+  {{ filteredDoctors.length }} {{ filteredDoctors.length === 1 ? 'doctor' : 'doctors' }} available · In-person consultations
+  <button *ngIf="isFiltered" type="button" class="clear-link" (click)="clearFilters()">Clear filters</button>
+</p>
 
 <!-- Doctor List -->
 <div class="doctor-list">
-  <div class="doctor-card" *ngFor="let doc of doctors">
+  <div class="doctor-card" *ngFor="let doc of filteredDoctors">
     <div class="doctor-info">
       <h2 class="doctor-name">{{ doc.name }}</h2>
       <p class="doctor-specialty">{{ doc.specialty }} · {{ doc.experience }}</p>
@@ -32,12 +38,21 @@
     
     <div class="doctor-availability">
       <span class="availability-label">Next available</span>
-      <span class="availability-date">{{ doc.nextAvailable }}</span>
+      <span class="availability-date">{{ doc.onLeave ? 'On leave · not taking bookings' : (doc.nextAvailable ?? 'No open slots') }}</span>
     </div>
     
-    <button class="btn-outline" type="button" (click)="viewProfile(doc)">View profile &rarr;</button>
+    <button class="btn-outline" type="button" (click)="viewProfile(doc)">View profile <svg [lucideIcon]="ArrowRightIcon" size="16" class="arrow-icon" aria-hidden="true"></svg></button>
   </div>
 </div>
 
+<!-- Empty State -->
+<div class="empty-state" *ngIf="filteredDoctors.length === 0">
+  <h3>No doctors found</h3>
+  <p>Try a different name, or choose another specialty.</p>
+  <button type="button" class="btn-outline" (click)="clearFilters()">Clear filters</button>
+</div>
+
 <!-- Footer Note -->
-<p class="footer-note">Showing all {{ doctors.length }} doctors. Select a profile to see the full schedule.</p>
+<p class="footer-note" *ngIf="filteredDoctors.length > 0">
+  Showing {{ isFiltered ? filteredDoctors.length + ' of ' + doctors.length : 'all ' + doctors.length }} doctors. Select a profile to see the full schedule.
+</p>

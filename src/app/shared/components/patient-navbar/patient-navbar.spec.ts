@@ -1,16 +1,18 @@
+import { provideRouter } from '@angular/router';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { PatientNavbar } from './patient-navbar';
+import { PatientNavbarComponent } from './patient-navbar';
 
-describe('PatientNavbar', () => {
-  let component: PatientNavbar;
-  let fixture: ComponentFixture<PatientNavbar>;
+describe('PatientNavbarComponent', () => {
+  let component: PatientNavbarComponent;
+  let fixture: ComponentFixture<PatientNavbarComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [PatientNavbar],
+      imports: [PatientNavbarComponent],
+      providers: [provideRouter([])],
     }).compileComponents();
 
-    fixture = TestBed.createComponent(PatientNavbar);
+    fixture = TestBed.createComponent(PatientNavbarComponent);
     component = fixture.componentInstance;
     await fixture.whenStable();
   });

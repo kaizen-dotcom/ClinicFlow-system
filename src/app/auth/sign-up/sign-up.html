@@ -1,4 +1,3 @@
-
 <div class="signup-container">
   <div class="signup-card">
 
@@ -7,28 +6,38 @@
       <p>Your care starts here. Join ClinicFlow.</p>
     </div>
 
-    <form>
+    <form #signupForm="ngForm" (ngSubmit)="onSubmit(signupForm)" novalidate>
 
       <!-- Full Name -->
       <div class="form-group">
         <label for="fullName">Full name</label>
-        <input
-          type="text"
-          id="fullName"
-          name="fullName"
-          placeholder="Enter your full name"
-        />
+        <input type="text" id="fullName" name="fullName" placeholder="Enter your full name"
+               [(ngModel)]="form.fullName" required #fullName="ngModel" autocomplete="name" />
+        @if (submitted && fullName.invalid) { <small class="field-error">Full name is required.</small> }
       </div>
 
       <!-- Email -->
       <div class="form-group">
         <label for="email">Email address</label>
-        <input
-          type="email"
-          id="email"
-          name="email"
-          placeholder="you@example.com"
-        />
+        <input type="email" id="email" name="email" placeholder="you@example.com"
+               [(ngModel)]="form.email" required email #email="ngModel" autocomplete="email" />
+        @if (submitted && email.invalid) { <small class="field-error">Enter a valid email address.</small> }
+      </div>
+
+      <!-- Phone -->
+      <div class="form-group">
+        <label for="phone">Phone number</label>
+        <input type="tel" id="phone" name="phone" placeholder="+1 (555) 000-0000"
+               [(ngModel)]="form.phone" required #phone="ngModel" autocomplete="tel" />
+        @if (submitted && phone.invalid) { <small class="field-error">Phone number is required so the clinic can reach you.</small> }
+      </div>
+
+      <!-- Date of birth -->
+      <div class="form-group">
+        <label for="dob">Date of birth</label>
+        <input type="date" id="dob" name="dob" [max]="maxDob"
+               [(ngModel)]="form.dob" required #dob="ngModel" autocomplete="bday" />
+        @if (submitted && dob.invalid) { <small class="field-error">Date of birth is required.</small> }
       </div>
 
       <!-- Password -->
@@ -36,23 +45,18 @@
         <label for="password">Password</label>
 
         <div class="password-field">
-          <input
-            [type]="showPassword() ? 'text' : 'password'"
-            id="password"
-            name="password"
-            placeholder="Create a password"
-          />
-
-          <button
-            type="button"
-            class="show-button"
-            (click)="togglePassword()"
-          >
+          <input [type]="showPassword() ? 'text' : 'password'" id="password" name="password"
+                 placeholder="Create a password" [(ngModel)]="form.password" required autocomplete="new-password" />
+          <button type="button" class="show-button" (click)="togglePassword()">
             {{ showPassword() ? 'Hide' : 'Show' }}
           </button>
         </div>
 
-        <small>Use at least 8 characters.</small>
+        @if ((submitted && !form.password) || passwordTooShort) {
+          <small class="field-error">Use at least 8 characters.</small>
+        } @else {
+          <small>Use at least 8 characters.</small>
+        }
       </div>
 
       <!-- Confirm Password -->
@@ -60,41 +64,33 @@
         <label for="confirmPassword">Confirm password</label>
 
         <div class="password-field">
-          <input
-            [type]="showConfirmPassword() ? 'text' : 'password'"
-            id="confirmPassword"
-            name="confirmPassword"
-            placeholder="Re-enter your password"
-          />
-
-          <button
-            type="button"
-            class="show-button"
-            (click)="toggleConfirmPassword()"
-          >
+          <input [type]="showConfirmPassword() ? 'text' : 'password'" id="confirmPassword" name="confirmPassword"
+                 placeholder="Re-enter your password" [(ngModel)]="form.confirmPassword" required autocomplete="new-password" />
+          <button type="button" class="show-button" (click)="toggleConfirmPassword()">
             {{ showConfirmPassword() ? 'Hide' : 'Show' }}
           </button>
         </div>
+        @if (passwordsMismatch || (submitted && !form.confirmPassword)) {
+          <small class="field-error">Passwords must match.</small>
+        }
       </div>
 
       <!-- Terms and Conditions -->
       <div class="terms-group">
-        <input
-          type="checkbox"
-          id="terms"
-          name="terms"
-        />
-
+        <input type="checkbox" id="terms" name="terms" [(ngModel)]="form.terms" />
         <label for="terms">
           I agree to the
-          <a href="#">Terms of Service</a>
+          <a href="#" (click)="$event.preventDefault()">Terms of Service</a>
           and
-          <a href="#">Privacy Policy</a>.
+          <a href="#" (click)="$event.preventDefault()">Privacy Policy</a>.
         </label>
       </div>
+      @if (submitted && !form.terms) { <small class="field-error terms-error">Please accept the terms to continue.</small> }
 
-      <!-- Create Account -->
-      <button type="button" class="signup-button">
+      @if (error) { <p class="signup-error" role="alert">{{ error }}</p> }
+
+      <!-- Create Account (creates the patient record and signs in) -->
+      <button type="submit" class="signup-button">
         Create account
       </button>
 
@@ -103,7 +99,7 @@
     <!-- Login Link -->
     <div class="login-link">
       Already have an account?
-      <a (click)="goToLogin()">Log in</a>
+      <a routerLink="/login">Log in</a>
     </div>
 
   </div>

@@ -2,132 +2,101 @@
 <div class="page-header">
   <div>
     <h1>Profile & settings</h1>
-    <p class="subtitle">Manage your administrator account and workspace preferences.</p>
+    <p class="subtitle">Manage your administrator account and clinic details.</p>
   </div>
 </div>
 
-<!-- Main Container -->
 <div class="settings-container">
-  
-  <!-- Tabs -->
-  <div class="tabs-header">
-    <div class="tab" [class.active]="activeTab === 'account'" (click)="setTab('account')">Account & preferences</div>
-    <div class="tab" [class.active]="activeTab === 'security'" (click)="setTab('security')">Security</div>
-    <div class="tab" [class.active]="activeTab === 'clinic'" (click)="setTab('clinic')">Clinic settings</div>
-  </div>
 
-  <!-- Tab Content: Account & Preferences -->
-  <div class="tab-content" *ngIf="activeTab === 'account'">
-    
-    <!-- Section 1: Account Information -->
+  <form #accountForm="ngForm" (ngSubmit)="saveAccount(accountForm)" novalidate>
+    <!-- Account Information -->
     <div class="section-card">
       <div class="section-header-flex">
         <div>
           <h2>Account information</h2>
-          <p class="section-subtitle">Your account details are visible to clinic staff.</p>
+          <p class="section-subtitle">Your email address is also your login.</p>
         </div>
-        <span class="role-badge">{{ adminData.role }}</span>
+        <span class="role-badge">Administrator · Full access</span>
       </div>
 
       <div class="form-grid">
         <div class="form-group">
-          <label>Full name</label>
-          <input type="text" class="form-control" [(ngModel)]="adminData.fullName">
+          <label for="st-name">Full name</label>
+          <input id="st-name" type="text" class="form-control" name="fullName" [(ngModel)]="account.fullName" required>
         </div>
         <div class="form-group">
-          <label>Email address</label>
-          <input type="email" class="form-control" [(ngModel)]="adminData.email">
+          <label for="st-email">Email address</label>
+          <input id="st-email" type="email" class="form-control" name="email" [(ngModel)]="account.email" required email>
         </div>
         <div class="form-group">
-          <label>Phone number</label>
-          <input type="text" class="form-control" [(ngModel)]="adminData.phone">
+          <label for="st-phone">Phone number</label>
+          <input id="st-phone" type="tel" class="form-control" name="phone" [(ngModel)]="account.phone" required>
         </div>
         <div class="form-group">
-          <label>Role</label>
-          <input type="text" class="form-control" [value]="adminData.role" disabled>
+          <label for="st-clinic">Clinic name</label>
+          <input id="st-clinic" type="text" class="form-control" name="clinicName" [(ngModel)]="account.clinicName" required>
         </div>
       </div>
-      
-      <p class="form-note">Contact the clinic owner to change account permissions.</p>
-    </div>
-
-    <!-- Section 2: Preferences (Two Columns) -->
-    <div class="preferences-grid">
-      
-      <!-- Clinic Preferences -->
-      <div class="section-card">
-        <h2>Clinic preferences</h2>
-        <p class="section-subtitle">Basic preferences for your clinic workspace.</p>
-        
-        <div class="form-group">
-          <label>Clinic name</label>
-          <input type="text" class="form-control" [(ngModel)]="adminData.clinicName">
-        </div>
-        <div class="form-group">
-          <label>Language</label>
-          <select class="form-control" [(ngModel)]="adminData.language">
-            <option>English (United States)</option>
-          </select>
-        </div>
-      </div>
-
-      <!-- Security & Regional -->
-      <div class="section-card">
-        <h2>Security & regional preferences</h2>
-        <p class="section-subtitle">Keep your account secure and details consistent.</p>
-        
-        <div class="form-group">
-          <label>Password</label>
-          <div class="password-row">
-            <input type="password" class="form-control" value="********" disabled>
-            <button class="btn-outline">Change password</button>
-          </div>
-          <span class="helper-text">Last updated {{ adminData.lastPasswordUpdate }}</span>
-        </div>
-        
-        <div class="form-row">
-          <div class="form-group">
-            <label>Time zone</label>
-            <select class="form-control" [(ngModel)]="adminData.timeZone">
-              <option>Eastern Time (EST)</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Date format</label>
-            <select class="form-control" [(ngModel)]="adminData.dateFormat">
-              <option>DD MMM YYYY</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
     </div>
 
     <!-- Footer Actions -->
     <div class="form-footer">
-      <p class="footer-note">Changes apply to your administrator account.</p>
+      <p class="footer-note">
+        @if (accountError) { <span class="cf-error">{{ accountError }}</span> }
+        @else if (accountMessage) { <span class="saved">{{ accountMessage }}</span> }
+        @else { Changes apply to your administrator account. }
+      </p>
       <div class="footer-actions">
-        <button class="btn-outline">Cancel</button>
-        <button class="btn-primary">Save changes</button>
+        <button type="button" class="btn-outline" (click)="cancel(accountForm)" [disabled]="accountForm.pristine">Cancel</button>
+        <button type="submit" class="btn-primary" [disabled]="accountForm.pristine">Save changes</button>
       </div>
     </div>
+  </form>
 
+  <!-- Security -->
+  <div class="section-card">
+    <h2>Security</h2>
+    <p class="section-subtitle">Password last updated {{ clinic.admin().passwordUpdatedOn | date: 'd MMMM y' }}.</p>
+
+    @if (passwordMessage) { <p class="cf-alert cf-alert-success" role="status">{{ passwordMessage }}</p> }
+
+    @if (!showPasswordForm) {
+      <button type="button" class="btn-outline" (click)="showPasswordForm = true; passwordMessage = ''">Change password</button>
+    } @else {
+      <form class="password-form" (ngSubmit)="changePassword()">
+        <div class="form-group">
+          <label for="pw-current">Current password</label>
+          <input id="pw-current" type="password" class="form-control" name="current" [(ngModel)]="password.current" autocomplete="current-password">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="pw-next">New password</label>
+            <input id="pw-next" type="password" class="form-control" name="next" [(ngModel)]="password.next" autocomplete="new-password">
+            <span class="helper-text">At least 8 characters.</span>
+          </div>
+          <div class="form-group">
+            <label for="pw-confirm">Confirm new password</label>
+            <input id="pw-confirm" type="password" class="form-control" name="confirm" [(ngModel)]="password.confirm" autocomplete="new-password">
+          </div>
+        </div>
+        @if (passwordError) { <p class="cf-alert cf-alert-error" role="alert">{{ passwordError }}</p> }
+        <div class="footer-actions">
+          <button type="button" class="btn-outline" (click)="showPasswordForm = false; passwordError = ''">Cancel</button>
+          <button type="submit" class="btn-primary">Update password</button>
+        </div>
+      </form>
+    }
   </div>
 
-  <!-- Placeholder for Security Tab -->
-  <div class="tab-content" *ngIf="activeTab === 'security'">
-    <div class="section-card">
-      <h2>Security</h2>
-      <p class="section-subtitle">Security settings will go here.</p>
-    </div>
-  </div>
-
-  <!-- Placeholder for Clinic Tab -->
-  <div class="tab-content" *ngIf="activeTab === 'clinic'">
-    <div class="section-card">
-      <h2>Clinic settings</h2>
-      <p class="section-subtitle">Clinic settings will go here.</p>
-    </div>
+  <!-- Demo data -->
+  <div class="section-card">
+    <h2>Demo data</h2>
+    <p class="section-subtitle">
+      Until the backend is connected, all data is stored in this browser. Resetting restores the sample doctors,
+      patients, schedules and appointments.
+    </p>
+    @if (resetMessage) { <p class="cf-alert cf-alert-success" role="status">{{ resetMessage }}</p> }
+    <button type="button" class="btn-outline" (click)="resetDemo()">Reset demo data</button>
   </div>
 
 </div>

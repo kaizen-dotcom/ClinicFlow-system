@@ -19,14 +19,21 @@
 }
 
 .logo-icon {
-  background-color: white;
-  color: var(--sidebar-bg);
   width: 36px;
   height: 36px;
   border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+/* logo.png has transparent padding; scale up so the tile fills the box. */
+.logo-icon img {
+  width: 60px;
+  height: 60px;
+  flex-shrink: 0;
+  display: block;
 }
 
 .brand-text h1 {

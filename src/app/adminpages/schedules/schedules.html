@@ -2,113 +2,158 @@
 <div class="page-header">
   <div>
     <h1>Schedule management</h1>
-    <p class="subtitle">Set doctor availability and manage bookable time slots.</p>
+    <p class="subtitle">Set doctor availability. Patients can only book inside these hours.</p>
   </div>
 </div>
 
 <!-- Top Toolbar -->
 <div class="toolbar-container">
   <div class="toolbar-left">
-    <select class="filter-select doctor-select"><option>Dr. Amelia Brooks</option></select>
-    <div class="date-nav">
-      <button class="nav-btn">&lsaquo;</button>
-      <span>09 – 13 November 2026</span>
-      <button class="nav-btn">&rsaquo;</button>
+    <label class="doctor-picker" title="Doctor">
+      <svg [lucideIcon]="StethoscopeIcon" size="16" class="picker-icon" aria-hidden="true"></svg>
+      <select class="doctor-select" aria-label="Doctor" [ngModel]="doctorId()" (ngModelChange)="selectDoctor($event)">
+        @for (d of clinic.doctors(); track d.id) {
+          <option [value]="d.id">{{ d.name }}{{ d.status !== 'Active' ? ' (on leave)' : '' }}</option>
+        }
+      </select>
+      <svg [lucideIcon]="ChevronDownIcon" size="16" class="picker-caret" aria-hidden="true"></svg>
+    </label>
+
+    <div class="date-nav" role="group" aria-label="Week">
+      <button type="button" class="nav-btn" (click)="moveWeek(-1)" aria-label="Previous week" title="Previous week">
+        <svg [lucideIcon]="ChevronLeftIcon" size="16"></svg>
+      </button>
+      <span class="week-label">{{ days()[0] | date: 'd MMM' }} – {{ days()[4] | date: 'd MMM y' }}</span>
+      <button type="button" class="nav-btn" (click)="moveWeek(1)" aria-label="Next week" title="Next week">
+        <svg [lucideIcon]="ChevronRightIcon" size="16"></svg>
+      </button>
     </div>
-    <button class="btn-outline">Today</button>
-  </div>
-  <div class="toolbar-right">
-    <select class="filter-select"><option>Week</option></select>
+
+    <button type="button" class="today-btn" (click)="goToday()" [disabled]="isCurrentWeek()"
+            [attr.title]="isCurrentWeek() ? 'Already showing this week' : 'Jump to this week'">
+      <svg [lucideIcon]="CalendarIcon" size="16" aria-hidden="true"></svg>
+      This week
+    </button>
   </div>
 </div>
 
+@if (doctor()?.status === 'On leave') {
+  <p class="cf-alert cf-alert-info sched-note">{{ doctor()?.name }} is on leave, so patients can't book these hours until they're set available on the Doctors page.</p>
+}
+
 <!-- Main Layout: Calendar + Form -->
 <div class="schedule-layout">
-  
+
   <!-- Left Side: Calendar Grid -->
   <div class="calendar-container">
-    <!-- Calendar Header -->
     <div class="calendar-header">
       <div class="time-col-header"></div>
-      <div class="day-header" *ngFor="let day of days">{{ day.label }}</div>
+      @for (day of days(); track day) {
+        <div class="day-header" [class.today]="isToday(day)">{{ day | date: 'EEE dd' | uppercase }}</div>
+      }
     </div>
-    
-    <!-- Calendar Body -->
+
     <div class="calendar-body">
-      <!-- Time Column -->
       <div class="time-column">
-        <div class="time-label" *ngFor="let hour of [8,9,10,11,12,13,14,15,16]">{{ hour }}:00</div>
+        @for (hour of hours; track hour) { <div class="time-label">{{ hour }}:00</div> }
       </div>
 
-      <!-- Grid Background Lines & Blocks -->
-      <div class="grid-area">
-        <!-- Horizontal grid lines -->
-        <div class="grid-line" *ngFor="let hour of [8,9,10,11,12,13,14,15,16]"></div>
+      <div class="grid-area" [style.grid-template-rows]="'repeat(' + rowCount + ', 30px)'">
+        @for (hour of hours; track hour) { <div class="grid-line" [style.grid-row]="'span 2'"></div> }
 
-        <!-- Schedule Blocks -->
-        <div class="schedule-block" 
-             *ngFor="let block of scheduleBlocks"
-             [ngClass]="'block-' + block.type"
-             [style.grid-row]="block.startHour + ' / span ' + block.duration"
-             [style.grid-column]="block.day">
-          <span class="block-title">{{ block.title }}</span>
-          <span class="block-subtitle">{{ block.subtitle }}</span>
-        </div>
+        @for (block of blocks(); track block.id) {
+          <button type="button" class="schedule-block"
+                  [ngClass]="'block-' + block.type"
+                  [class.selected]="selectedBlockId() === block.id"
+                  [style.grid-row]="block.gridRow"
+                  [style.grid-column]="block.gridColumn"
+                  (click)="selectedBlockId.set(block.id)">
+            <span class="block-title">{{ block.title }}</span>
+            <span class="block-subtitle">{{ block.booked }}/{{ block.total }} booked · {{ block.slotMinutes }} min</span>
+          </button>
+        }
       </div>
     </div>
-    
-    <!-- Calendar Legend -->
+
     <div class="calendar-legend">
       <div class="legend-item"><span class="dot dot-available"></span> Available</div>
-      <div class="legend-item"><span class="dot dot-partial"></span> Partially booked</div>
-      <div class="legend-item"><span class="dot dot-unavailable"></span> Blank periods are unavailable. All times are in clinic local time (EST).</div>
+      <div class="legend-item"><span class="dot dot-partial"></span> Partially or fully booked</div>
+      <div class="legend-item"><span class="dot dot-unavailable"></span> Blank periods are unavailable. Click a block for details.</div>
     </div>
   </div>
 
-  <!-- Right Side: Create Availability Form -->
+  <!-- Right Side -->
   <div class="form-container">
+    @if (selectedBlock(); as b) {
+      <div class="form-header">
+        <h2>{{ b.date | date: 'EEEE, d MMM' }}</h2>
+        <p>{{ b.title }} · {{ b.total }} slots of {{ b.slotMinutes }} min · {{ b.booked }} booked</p>
+      </div>
+      @if (bookedInSelected().length) {
+        <ul class="booked-list">
+          @for (a of bookedInSelected(); track a.id) {
+            <li><strong>{{ a.start }}</strong> {{ a.patient }} <span class="text-muted">({{ a.status }})</span></li>
+          }
+        </ul>
+      }
+      <div class="block-actions">
+        <button type="button" class="btn-secondary" (click)="selectedBlockId.set(null)">Close</button>
+        <button type="button" class="btn-danger" (click)="removeSelected()" [disabled]="b.booked > 0"
+                [attr.title]="b.booked ? 'Cancel or move booked appointments first' : null">Remove availability</button>
+      </div>
+      <hr class="divider">
+    }
+
     <div class="form-header">
       <h2>Create availability</h2>
       <p>Add bookable slots to the calendar.</p>
     </div>
-    
-    <form class="availability-form">
+
+    <form class="availability-form" (ngSubmit)="createSchedule()">
       <div class="form-group">
-        <label>Doctor</label>
-        <select class="form-control"><option>Dr. Amelia Brooks</option></select>
+        <label for="sf-doctor">Doctor</label>
+        <select id="sf-doctor" class="form-control" name="doctorId" [(ngModel)]="form.doctorId">
+          @for (d of clinic.doctors(); track d.id) { <option [value]="d.id">{{ d.name }}</option> }
+        </select>
       </div>
 
       <div class="form-group">
-        <label>Date</label>
-        <input type="date" class="form-control" value="2026-11-11">
+        <label for="sf-date">Date</label>
+        <input id="sf-date" type="date" class="form-control" name="date" [(ngModel)]="form.date">
       </div>
 
       <div class="form-row">
         <div class="form-group">
-          <label>Start time</label>
-          <input type="time" class="form-control" value="09:00">
+          <label for="sf-start">Start time</label>
+          <input id="sf-start" type="time" class="form-control" name="start" step="900" [(ngModel)]="form.start">
         </div>
         <div class="form-group">
-          <label>End time</label>
-          <input type="time" class="form-control" value="12:00">
+          <label for="sf-end">End time</label>
+          <input id="sf-end" type="time" class="form-control" name="end" step="900" [(ngModel)]="form.end">
         </div>
       </div>
 
       <div class="form-group">
-        <label>Slot duration</label>
-        <select class="form-control"><option>30 minutes</option></select>
+        <label for="sf-slot">Slot duration</label>
+        <select id="sf-slot" class="form-control" name="slotMinutes" [(ngModel)]="form.slotMinutes">
+          @for (m of slotOptions; track m) { <option [ngValue]="m">{{ m }} minutes</option> }
+        </select>
       </div>
 
       <div class="form-checkbox">
-        <input type="checkbox" id="repeatWeekly">
-        <label for="repeatWeekly">Repeat weekly</label>
+        <input type="checkbox" id="repeatWeekly" name="repeat" [(ngModel)]="form.repeat">
+        <label for="repeatWeekly">Repeat weekly for</label>
+        <input type="number" class="form-control weeks-input" name="repeatWeeks" min="1" max="26" [(ngModel)]="form.repeatWeeks" [disabled]="!form.repeat">
+        <span>more weeks</span>
       </div>
 
-      <p class="form-note">6 appointment slots will be created.</p>
+      <p class="form-note">{{ slotPreview }} appointment slot{{ slotPreview === 1 ? '' : 's' }} will be created.</p>
+      @if (formError) { <p class="cf-alert cf-alert-error" role="alert">{{ formError }}</p> }
+      @if (message) { <p class="cf-alert cf-alert-success" role="status">{{ message }}</p> }
 
-      <button type="button" class="btn-primary btn-full">Create schedule</button>
-      
-      <p class="form-footer-note">Existing appointments stay unchanged.</p>
+      <button type="submit" class="btn-primary btn-full">Create schedule</button>
+
+      <p class="form-footer-note">Overlapping days are skipped. Existing appointments stay unchanged.</p>
     </form>
   </div>
 

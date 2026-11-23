@@ -1,0 +1,171 @@
+@if (modal.isOpen()) {
+  <div class="backdrop" (click)="close()">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="book-title" (click)="$event.stopPropagation()">
+
+      <header class="modal-header">
+        <div>
+          <h2 id="book-title">{{ sent ? 'Request sent' : 'Book appointment' }}</h2>
+          <p>{{ sent ? 'The clinic will review your request shortly.' : 'Fill in your details and choose an available time.' }}</p>
+        </div>
+        <button type="button" class="icon-btn" aria-label="Close" (click)="close()">&times;</button>
+      </header>
+
+      @if (!sent) {
+        <form #bookForm="ngForm" (ngSubmit)="submit(bookForm)" novalidate>
+          <div class="modal-body">
+
+            <!-- Patient details -->
+            <section>
+              <h3>Patient details <span class="pid">ID · {{ patientId }}</span></h3>
+              <div class="grid">
+                <label class="field span-2">
+                  <span>Full name *</span>
+                  <input name="fullName" [(ngModel)]="form.fullName" required #fullName="ngModel" />
+                  @if (submitted && fullName.invalid) { <small class="error">Full name is required.</small> }
+                </label>
+
+                <label class="field">
+                  <span>Date of birth *</span>
+                  <input type="date" name="dob" [(ngModel)]="form.dob" required #dob="ngModel" />
+                  @if (submitted && dob.invalid) { <small class="error">Date of birth is required.</small> }
+                </label>
+
+                <label class="field">
+                  <span>Gender</span>
+                  <select name="gender" [(ngModel)]="form.gender">
+                    <option>Female</option>
+                    <option>Male</option>
+                    <option>Other</option>
+                    <option>Prefer not to say</option>
+                  </select>
+                </label>
+
+                <label class="field">
+                  <span>Phone number *</span>
+                  <input type="tel" name="phone" [(ngModel)]="form.phone" required #phone="ngModel" />
+                  @if (submitted && phone.invalid) { <small class="error">Phone number is required.</small> }
+                </label>
+
+                <label class="field">
+                  <span>Email *</span>
+                  <input type="email" name="email" [(ngModel)]="form.email" required email #email="ngModel" />
+                  @if (submitted && email.invalid) { <small class="error">Enter a valid email.</small> }
+                </label>
+              </div>
+            </section>
+
+            <!-- Appointment details -->
+            <section>
+              <h3>Appointment details</h3>
+              <div class="grid">
+                <label class="field span-2">
+                  <span>Doctor *</span>
+                  <select name="doctorId" [(ngModel)]="form.doctorId" (ngModelChange)="onDoctorChange()" required #doctorSel="ngModel">
+                    <option value="" disabled>Select a doctor</option>
+                    @for (d of clinic.activeDoctors(); track d.id) {
+                      <option [value]="d.id">{{ d.name }} · {{ d.specialty }}</option>
+                    }
+                  </select>
+                  @if (submitted && doctorSel.invalid) { <small class="error">Please choose a doctor.</small> }
+                </label>
+
+                <label class="field span-2">
+                  <span>Appointment type *</span>
+                  <select name="type" [(ngModel)]="form.type" required>
+                    @for (t of appointmentTypes; track t) { <option>{{ t }}</option> }
+                  </select>
+                </label>
+              </div>
+
+              @if (form.doctorId) {
+                @if (dates.length) {
+                  <div class="field">
+                    <span>Date *</span>
+                    <div class="chips">
+                      @for (d of dates; track d) {
+                        <button type="button" class="date-chip" [class.selected]="form.date === d" (click)="selectDate(d)">
+                          <small>{{ d | date: 'EEE' }}</small>
+                          <strong>{{ d | date: 'd' }}</strong>
+                          <small>{{ d | date: 'MMM' }}</small>
+                        </button>
+                      }
+                    </div>
+                  </div>
+
+                  <div class="field">
+                    <span>Time * <small class="hint">· {{ form.date | date: 'EEEE, d MMMM' }}</small></span>
+                    <div class="chips">
+                      @for (s of slots; track s.time) {
+                        <button type="button" class="slot-chip" [class.selected]="form.time === s.time"
+                                [disabled]="!s.available" [attr.title]="s.booked ? 'Already booked' : null" (click)="selectSlot(s)">
+                          {{ s.label }}
+                        </button>
+                      }
+                    </div>
+                    @if (submitted && !form.time) { <small class="error">Please choose a time.</small> }
+                  </div>
+                } @else {
+                  <p class="empty">{{ doctor?.name }} has no open slots in the next 60 days. Please choose another doctor.</p>
+                }
+              }
+
+              <label class="field">
+                <span>Reason for visit *</span>
+                <textarea name="reason" rows="2" [(ngModel)]="form.reason" required #reason="ngModel"
+                          placeholder="e.g. Routine check-up, persistent headache"></textarea>
+                @if (submitted && reason.invalid) { <small class="error">Please tell us the reason for your visit.</small> }
+              </label>
+
+              <label class="field">
+                <span>Allergies / current medications (optional)</span>
+                <textarea name="notes" rows="2" [(ngModel)]="form.notes" placeholder="Anything the doctor should know"></textarea>
+              </label>
+
+              <label class="check">
+                <input type="checkbox" name="firstVisit" [(ngModel)]="form.firstVisit" />
+                This is my first visit with this doctor
+              </label>
+            </section>
+
+            <!-- Summary -->
+            @if (doctor && form.date && slot) {
+              <div class="summary">
+                <strong>{{ doctor.name }}</strong> · {{ form.type }}<br />
+                {{ form.date | date: 'EEEE, d MMMM y' }} · {{ slot.label }}<br />
+                ClinicFlow · {{ doctor.location }}
+              </div>
+            }
+
+            <label class="check">
+              <input type="checkbox" name="consent" [(ngModel)]="form.consent" required #consent="ngModel" />
+              I confirm these details are correct and agree to the clinic's appointment policy. *
+            </label>
+            @if (submitted && consent.invalid) { <small class="error">Please confirm to continue.</small> }
+
+            @if (error) { <p class="error-box" role="alert">{{ error }}</p> }
+          </div>
+
+          <footer class="modal-footer">
+            <button type="button" class="btn-secondary" (click)="close()">Cancel</button>
+            <button type="submit" class="btn-primary">Request appointment</button>
+          </footer>
+        </form>
+      } @else {
+        <div class="modal-body">
+          <div class="summary">
+            <strong>{{ doctor?.name }}</strong> · {{ form.type }}<br />
+            {{ form.date | date: 'EEEE, d MMMM y' }} · {{ slot?.label }}<br />
+            ClinicFlow · {{ doctor?.location }}<br />
+            Reference: {{ createdId }} · Status: <span class="badge">Pending</span>
+          </div>
+          <p class="muted">We'll notify you once the clinic reviews your request. Please arrive 15 minutes early and bring a valid ID.</p>
+        </div>
+        <footer class="modal-footer">
+          <button type="button" class="btn-secondary" (click)="viewAppointment()">View appointment</button>
+          <button type="button" class="btn-primary" (click)="close()">Done</button>
+        </footer>
+      }
+
+    </div>
+  </div>
+}

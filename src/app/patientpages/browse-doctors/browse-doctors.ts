@@ -1,33 +1,73 @@
-import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, computed, inject } from '@angular/core';
+import { CommonModule, formatDate } from '@angular/common';
+import { ClinicStore } from '../../shared/services/clinic-store.service';
+import { LucideDynamicIcon, LucideArrowRight } from '@lucide/angular';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-browse-doctors',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, LucideDynamicIcon],
   templateUrl: './browse-doctors.html',
   styleUrl: './browse-doctors.css'
 })
 export class BrowseDoctors {
+  readonly ArrowRightIcon = LucideArrowRight;
+
   searchQuery = '';
   selectedSpecialty = 'All specialties';
 
-  constructor(private router: Router) {}
+  private readonly router = inject(Router);
+  private readonly clinic = inject(ClinicStore);
 
-  specialties = ['All specialties', 'General medicine', 'Cardiology', 'Dentistry', 'Dermatology', 'Pediatrics', 'Orthopedics'];
+  get specialties(): string[] {
+    return ['All specialties', ...this.clinic.specialties()];
+  }
 
-  doctors = [
-    { id: 'amelia-brooks', name: 'Dr. Amelia Brooks', specialty: 'General medicine', experience: '12 years of experience', nextAvailable: 'Thu, 12 Nov · 09:00 AM' },
-    { id: 'daniel-kim', name: 'Dr. Daniel Kim', specialty: 'Cardiology', experience: '10 years of experience', nextAvailable: 'Wed, 18 Nov · 10:30 AM' },
-    { id: 'maya-patel', name: 'Dr. Maya Patel', specialty: 'Dentistry', experience: '8 years of experience', nextAvailable: 'Fri, 13 Nov · 11:00 AM' },
-    { id: 'james-carter', name: 'Dr. James Carter', specialty: 'Dermatology', experience: '9 years of experience', nextAvailable: 'Fri, 13 Nov · 02:00 PM' },
-    { id: 'sophia-lee', name: 'Dr. Sophia Lee', specialty: 'Pediatrics', experience: '11 years of experience', nextAvailable: 'Mon, 16 Nov · 09:30 AM' },
-    { id: 'noah-williams', name: 'Dr. Noah Williams', specialty: 'Orthopedics', experience: '14 years of experience', nextAvailable: 'Mon, 16 Nov · 01:00 PM' }
-  ];
+  /** Doctors with their next open slot; doctors on leave are listed last. Cached until data changes. */
+  private readonly allDoctors = computed(() =>
+    [...this.clinic.doctors()]
+      .sort((a, b) => (a.status === 'Active' ? 0 : 1) - (b.status === 'Active' ? 0 : 1))
+      .map(d => {
+        const next = d.status === 'Active' ? this.clinic.nextAvailable(d.id) : null;
+        return {
+          id: d.id, name: d.name, specialty: d.specialty,
+          experience: `${d.experienceYears} years of experience`,
+          onLeave: d.status !== 'Active',
+          nextAvailable: next ? `${formatDate(next.date, 'EEE, d MMM', 'en-US')} · ${next.slot.label}` : null
+        };
+      })
+  );
 
-  viewProfile(doctor: any) {
+  get doctors() {
+    return this.allDoctors();
+  }
+
+  /** Doctors matching the search text (name or specialty) and the selected specialty. */
+  get filteredDoctors() {
+    const query = this.searchQuery.trim().toLowerCase();
+    return this.doctors.filter(doc => {
+      const matchesSpecialty =
+        this.selectedSpecialty === 'All specialties' || doc.specialty === this.selectedSpecialty;
+      const matchesQuery =
+        !query ||
+        doc.name.toLowerCase().includes(query) ||
+        doc.specialty.toLowerCase().includes(query);
+      return matchesSpecialty && matchesQuery;
+    });
+  }
+
+  get isFiltered(): boolean {
+    return !!this.searchQuery.trim() || this.selectedSpecialty !== 'All specialties';
+  }
+
+  clearFilters() {
+    this.searchQuery = '';
+    this.selectedSpecialty = 'All specialties';
+  }
+
+  viewProfile(doctor: { id: string }) {
     this.router.navigate(['/patient/doctor-details', doctor.id]);
   }
 }

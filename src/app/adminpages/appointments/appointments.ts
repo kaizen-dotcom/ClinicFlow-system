@@ -1,51 +1,114 @@
+import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
+import { AdminUiService } from '../../shared/services/admin-ui.service';
+import { AppointmentView, ClinicStore } from '../../shared/services/clinic-store.service';
+import { APPOINTMENT_STATUSES, AppointmentStatus } from '../../shared/services/clinic.models';
+import { downloadCsv } from '../../shared/utils/csv';
+
+const PAGE_SIZE = 10;
 
 @Component({
   selector: 'app-appointments',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './appointments.html',
   styleUrls: ['./appointments.css']
 })
 export class AppointmentsComponent {
-  // 1. Stat Cards
-  statCards = [
-    { label: 'Total appointments', value: '248', subtext: '+12% vs last month' },
-    { label: 'Pending', value: '32', subtext: 'Need review' },
-    { label: 'Approved', value: '180', subtext: 'Confirmed visits' },
-    { label: 'Cancelled', value: '12', subtext: 'Rescheduled' }
-  ];
+  readonly ui = inject(AdminUiService);
+  readonly clinic = inject(ClinicStore);
 
-  // 2. Tabs
-  tabs = [
-    { label: 'All', active: true, count: 248 },
-    { label: 'Pending', active: false, count: 32 },
-    { label: 'Approved', active: false, count: 180 },
-    { label: 'Completed', active: false, count: 148 }
-  ];
+  readonly status = signal<AppointmentStatus | 'All'>('All');
+  readonly search = signal('');
+  readonly doctorId = signal('');
+  readonly month = signal('');   // "YYYY-MM" or ''
+  readonly page = signal(1);
+  message = '';
 
-  // 3. Table Data
-  appointments = [
-    { id: 'APT-1001', patient: 'John Smith', doctor: 'Dr. Emma Stone', dateTime: 'Nov 15, 2026, 09:00', status: 'Pending' },
-    { id: 'APT-1002', patient: 'Sarah Lee', doctor: 'Dr. Michael Chen', dateTime: 'Nov 15, 2026, 10:30', status: 'Approved' },
-    { id: 'APT-1003', patient: 'David Brown', doctor: 'Dr. Olivia Park', dateTime: 'Nov 16, 2026, 11:00', status: 'Completed' },
-    { id: 'APT-1004', patient: 'Mia Wilson', doctor: 'Dr. Noah Davis', dateTime: 'Nov 17, 2026, 13:15', status: 'Cancelled' }
-  ];
+  constructor() {
+    const s = inject(ActivatedRoute).snapshot.queryParamMap.get('status') as AppointmentStatus | null;
+    if (s && APPOINTMENT_STATUSES.includes(s)) this.status.set(s);
+  }
 
-  // Helper to set the correct badge color
+  /** Months that have appointments, newest first. */
+  readonly months = computed(() =>
+    [...new Set(this.clinic.appointments().map(a => a.date.slice(0, 7)))].sort().reverse()
+  );
+
+  /** Appointments matching search, doctor and month (before the status tab). */
+  private readonly base = computed(() => {
+    const q = this.search().trim().toLowerCase();
+    return this.clinic.appointments().filter(a =>
+      (!this.doctorId() || a.doctorId === this.doctorId()) &&
+      (!this.month() || a.date.startsWith(this.month())) &&
+      (!q || a.patient.toLowerCase().includes(q) || a.id.toLowerCase().includes(q) || a.patientId.toLowerCase().includes(q))
+    );
+  });
+
+  readonly tabs = computed(() => [
+    { label: 'All', value: 'All' as const, count: this.base().length },
+    ...APPOINTMENT_STATUSES.map(s => ({ label: s, value: s, count: this.base().filter(a => a.status === s).length }))
+  ]);
+
+  /** Pending first (oldest request first), then by date. */
+  readonly filtered = computed(() => {
+    const list = this.status() === 'All' ? this.base() : this.base().filter(a => a.status === this.status());
+    return [...list].sort((a, b) =>
+      (a.status === 'Pending' ? 0 : 1) - (b.status === 'Pending' ? 0 : 1) || (b.date + b.time).localeCompare(a.date + a.time)
+    );
+  });
+
+  readonly pageCount = computed(() => Math.max(1, Math.ceil(this.filtered().length / PAGE_SIZE)));
+  readonly pageItems = computed(() => {
+    const p = Math.min(this.page(), this.pageCount());
+    return this.filtered().slice((p - 1) * PAGE_SIZE, p * PAGE_SIZE);
+  });
+  readonly rangeLabel = computed(() => {
+    const total = this.filtered().length;
+    if (!total) return 'No appointments';
+    const p = Math.min(this.page(), this.pageCount());
+    return `Showing ${(p - 1) * PAGE_SIZE + 1}–${Math.min(p * PAGE_SIZE, total)} of ${total} appointments`;
+  });
+
+  readonly statCards = computed(() => {
+    const all = this.clinic.appointments();
+    const count = (s: AppointmentStatus) => all.filter(a => a.status === s).length;
+    return [
+      { label: 'Total appointments', value: all.length, subtext: `${count('Completed')} completed` },
+      { label: 'Pending', value: count('Pending'), subtext: count('Pending') ? 'Need review' : 'All caught up' },
+      { label: 'Approved', value: count('Approved'), subtext: 'Confirmed upcoming visits' },
+      { label: 'Cancelled / rejected', value: count('Cancelled') + count('Rejected'), subtext: 'Will not take place' }
+    ];
+  });
+
+  setFilter(fn: () => void) {
+    fn();
+    this.page.set(1);
+  }
+
+  reset() {
+    this.search.set('');
+    this.doctorId.set('');
+    this.month.set('');
+    this.status.set('All');
+    this.page.set(1);
+  }
+
+  approve(a: AppointmentView) {
+    const r = this.clinic.approve(a.id);
+    this.message = r.ok ? `${a.id} approved. ${a.patient} has been notified.` : r.error;
+  }
+
+  exportCsv() {
+    downloadCsv('appointments.csv', [
+      ['Appointment', 'Patient ID', 'Patient', 'Doctor', 'Specialty', 'Date', 'Time', 'Type', 'Status', 'Reason'],
+      ...this.filtered().map(a => [a.id, a.patientId, a.patient, a.doctor, a.specialty, a.date, a.start, a.type, a.status, a.reason])
+    ]);
+  }
+
   getStatusClass(status: string): string {
-    switch (status) {
-      case 'Pending':
-        return 'badge-pending';
-      case 'Approved':
-        return 'badge-approved';
-      case 'Completed':
-        return 'badge-completed';
-      case 'Cancelled':
-        return 'badge-cancelled';
-      default:
-        return 'badge-default';
-    }
+    return 'badge-' + status.toLowerCase();
   }
 }

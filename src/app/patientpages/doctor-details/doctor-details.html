@@ -4,66 +4,91 @@
   <p class="subtitle">Get to know your doctor and find your next available visit.</p>
 </div>
 
-<!-- Doctor Profile -->
-<div class="doctor-profile">
-  <span class="specialty-tag">{{ doctor.specialty }}</span>
-  <h2 class="doctor-name">{{ doctor.name }}</h2>
-  <p class="doctor-title">{{ doctor.title }}</p>
-  
-  <div class="doctor-meta">
-    <span>{{ doctor.experience }}</span>
-    <span>{{ doctor.languages }}</span>
-    <span>{{ doctor.location }}</span>
-  </div>
-  
-  <p class="doctor-bio">{{ doctor.bio }}</p>
-</div>
+@if (doctor(); as doctor) {
+  <!-- Doctor Profile -->
+  <div class="doctor-profile">
+    <span class="specialty-tag">{{ doctor.specialty | uppercase }}</span>
+    <h2 class="doctor-name">{{ doctor.name }}</h2>
+    <p class="doctor-title">{{ doctor.title }}</p>
 
-<!-- Choose Available Time -->
-<div class="time-section">
-  <h2 class="section-title">Choose an available time</h2>
-  <p class="section-note">All times are clinic local time · 30-minute visits</p>
-
-  <!-- Date Selector -->
-  <div class="date-selector">
-    <div class="date-item" *ngFor="let d of dates; let i = index" [class.selected]="d.selected" (click)="selectDate(i)">
-      <span class="date-day">{{ d.day }}</span>
-      <span class="date-number">{{ d.date }}</span>
+    <div class="doctor-meta">
+      <span>{{ doctor.experienceYears }} years of experience</span>
+      <span>{{ doctor.languages }}</span>
+      <span>ClinicFlow · {{ doctor.location }}</span>
     </div>
+
+    <p class="doctor-bio">{{ doctor.bio }}</p>
   </div>
 
-  <!-- Time Slots -->
-  <div class="time-slots">
-    <div class="slot" 
-         *ngFor="let slot of timeSlots"
-         [class.slot-available]="slot.status === 'available'"
-         [class.slot-partial]="slot.status === 'partial'"
-         [class.slot-unavailable]="slot.status === 'unavailable'"
-         [class.slot-selected]="slot.status === 'selected'">
-      <span class="slot-time">{{ slot.time }}</span>
-      <span class="slot-status">
-        {{ slot.status === 'available' ? 'Available' : slot.status === 'partial' ? 'Fully booked' : slot.status === 'unavailable' ? 'Unavailable' : 'Selected' }}
-      </span>
+  <!-- Choose Available Time -->
+  <div class="time-section">
+    <h2 class="section-title">Choose an available time</h2>
+    <p class="section-note">All times are clinic local time</p>
+
+    @if (doctor.status !== 'Active') {
+      <p class="selected-summary">{{ doctor.name }} is on leave and not taking bookings right now.</p>
+    } @else if (!dates().length) {
+      <p class="selected-summary">No open slots in the next 60 days. Please check back later or choose another doctor.</p>
+    } @else {
+      <!-- Date Selector -->
+      <div class="date-selector">
+        @for (d of dates(); track d) {
+          <div class="date-item" [class.selected]="d === selectedDate()" (click)="selectDate(d)">
+            <span class="date-day">{{ d | date: 'EEE' }}</span>
+            <span class="date-number">{{ d | date: 'd' }}</span>
+          </div>
+        }
+      </div>
+
+      <!-- Time Slots -->
+      <div class="time-slots">
+        @for (slot of slots(); track slot.time) {
+          <div class="slot"
+               [class.slot-available]="slot.available && slot.time !== selectedTime()"
+               [class.slot-partial]="slot.booked"
+               [class.slot-unavailable]="!slot.available && !slot.booked"
+               [class.slot-selected]="slot.time === selectedTime()"
+               (click)="selectSlot(slot)">
+            <span class="slot-time">{{ slot.label }}</span>
+            <span class="slot-status">
+              {{ slot.time === selectedTime() ? 'Selected' : slot.booked ? 'Booked' : slot.available ? 'Available' : 'Unavailable' }}
+            </span>
+          </div>
+        }
+      </div>
+
+      <p class="selected-summary">
+        @if (selectedLabel()) {
+          Selected: {{ selectedDate() | date: 'EEEE, d MMMM' }} · {{ selectedLabel() }}
+        } @else {
+          Pick a time, or continue and choose it in the booking form.
+        }
+      </p>
+    }
+  </div>
+
+  <!-- Your Visit Panel -->
+  <div class="visit-panel">
+    <h3>Your visit</h3>
+    <div class="visit-detail">
+      <span class="visit-label">In-person consultation</span>
+      <span class="visit-value">{{ address }} · {{ doctor.location }}</span>
     </div>
+    <p class="visit-note">Please bring a valid ID and your current medication list.</p>
   </div>
 
-  <p class="selected-summary">Selected: {{ selectedDate }} · {{ selectedTime }}</p>
-</div>
+  <!-- Continue Button -->
+  @if (doctor.status === 'Active' && dates().length) {
+    <div class="actions">
+      <button class="btn-primary" (click)="continueToBooking()">Continue to booking</button>
+    </div>
+  }
 
-<!-- Your Visit Panel -->
-<div class="visit-panel">
-  <h3>Your visit</h3>
-  <div class="visit-detail">
-    <span class="visit-label">In-person consultation</span>
-    <span class="visit-value">ClinicFlow Medical Center · 120 Wellness Avenue · Room 204</span>
+  <!-- Footer Note -->
+  <p class="footer-note">Appointments are confirmed after clinic approval. You'll receive a notification once your request has been reviewed.</p>
+} @else {
+  <div class="doctor-profile">
+    <h2 class="doctor-name">Doctor not found</h2>
+    <p class="doctor-bio">This doctor may no longer be listed. <a routerLink="/patient/browse-doctors">Browse doctors</a></p>
   </div>
-  <p class="visit-note">Please bring a valid ID and your current medication list.</p>
-</div>
-
-<!-- Continue Button -->
-<div class="actions">
-  <button class="btn-primary">Continue to booking</button>
-</div>
-
-<!-- Footer Note -->
-<p class="footer-note">Appointments are confirmed after clinic approval. You'll receive a notification once your request has been reviewed.</p>
+}

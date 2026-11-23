@@ -68,6 +68,7 @@
 
 /* --- Date Selector --- */
 .date-selector {
+  flex-wrap: wrap;
   display: flex;
   gap: 12px;
   margin-bottom: 24px;
@@ -132,14 +133,14 @@
   border-color: var(--primary-green);
 }
 .slot-available:hover {
-  background-color: #E8F5E9;
+  background-color: var(--success-bg);
 }
 .slot-partial {
-  background-color: #F0F9FF;
-  border-color: #BAE6FD;
+  background-color: var(--info-bg);
+  border-color: var(--info-border);
 }
 .slot-unavailable {
-  background-color: #F8FAFC;
+  background-color: var(--bg-subtle);
   color: var(--text-muted);
 }
 .slot-selected {
@@ -161,7 +162,7 @@
 
 /* --- Visit Panel --- */
 .visit-panel {
-  background-color: #F8FAFC;
+  background-color: var(--bg-subtle);
   border: 1px solid var(--border-color);
   border-radius: 8px;
   padding: 24px;

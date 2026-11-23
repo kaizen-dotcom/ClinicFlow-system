@@ -14,16 +14,16 @@
       <p>Your details are shared only with your care team.</p>
     </div>
 
-    <form class="profile-form">
+    <form class="profile-form" #profileForm="ngForm" (ngSubmit)="save(profileForm)">
       <!-- First Name + Last Name -->
       <div class="form-row">
         <div class="form-group">
           <label>First name *</label>
-          <input type="text" class="form-control" [(ngModel)]="profile.firstName" name="firstName">
+          <input type="text" class="form-control" [(ngModel)]="profile.firstName" name="firstName" required>
         </div>
         <div class="form-group">
           <label>Last name *</label>
-          <input type="text" class="form-control" [(ngModel)]="profile.lastName" name="lastName">
+          <input type="text" class="form-control" [(ngModel)]="profile.lastName" name="lastName" required>
         </div>
       </div>
 
@@ -31,13 +31,14 @@
       <div class="form-row">
         <div class="form-group">
           <label>Date of birth *</label>
-          <input type="date" class="form-control" [(ngModel)]="profile.dob" name="dob">
+          <input type="date" class="form-control" [(ngModel)]="profile.dob" name="dob" required>
         </div>
         <div class="form-group">
           <label>Gender</label>
           <select class="form-control" [(ngModel)]="profile.gender" name="gender">
             <option>Female</option>
             <option>Male</option>
+            <option>Other</option>
             <option>Prefer not to say</option>
           </select>
         </div>
@@ -47,11 +48,11 @@
       <div class="form-row">
         <div class="form-group">
           <label>Email address *</label>
-          <input type="email" class="form-control" [(ngModel)]="profile.email" name="email">
+          <input type="email" class="form-control" [(ngModel)]="profile.email" name="email" required email>
         </div>
         <div class="form-group">
           <label>Phone number *</label>
-          <input type="tel" class="form-control" [(ngModel)]="profile.phone" name="phone">
+          <input type="tel" class="form-control" [(ngModel)]="profile.phone" name="phone" required>
         </div>
       </div>
 
@@ -62,11 +63,13 @@
       </div>
 
       <p class="required-note">* Required fields</p>
+      @if (message) { <p class="form-message success" role="status">{{ message }}</p> }
+      @if (error) { <p class="form-message failure" role="alert">{{ error }}</p> }
 
       <!-- Action Buttons -->
       <div class="form-actions">
-        <button type="button" class="btn-primary">Save changes</button>
-        <button type="button" class="btn-outline">Discard changes</button>
+        <button type="submit" class="btn-primary">Save changes</button>
+        <button type="button" class="btn-outline" (click)="discard(profileForm)" [disabled]="profileForm.pristine">Discard changes</button>
       </div>
     </form>
 
@@ -78,7 +81,7 @@
       </div>
       <div class="notif-toggle">
         <label class="toggle-switch">
-          <input type="checkbox" [(ngModel)]="emailUpdatesEnabled">
+          <input type="checkbox" [ngModel]="emailUpdatesEnabled" (ngModelChange)="toggleEmailUpdates($event)">
           <span class="toggle-slider"></span>
         </label>
         <span class="toggle-label">{{ emailUpdatesEnabled ? 'Email updates enabled' : 'Email updates disabled' }}</span>
@@ -90,12 +93,12 @@
   <div class="account-sidebar">
     <div class="account-card">
       <span class="account-label">PATIENT ID</span>
-      <span class="account-id">{{ account.patientId }}</span>
+      <span class="account-id">{{ mine.patient.id }}</span>
       
       <div class="account-divider"></div>
       
       <span class="account-label">REGISTERED SINCE</span>
-      <span class="account-date">{{ account.registeredSince }}</span>
+      <span class="account-date">{{ mine.patient.registeredOn | date: 'MMMM y' }}</span>
       
       <div class="account-divider"></div>
       

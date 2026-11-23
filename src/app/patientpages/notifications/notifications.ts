@@ -1,64 +1,63 @@
-import { Component } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
+import { LucideDynamicIcon, LucideArrowRight } from '@lucide/angular';
+import { BookingModalService } from '../../shared/services/booking-modal.service';
+import { ClinicStore } from '../../shared/services/clinic-store.service';
+import { PatientAppointmentsService } from '../../shared/services/patient-appointments.service';
+import { PatientNotification } from '../../shared/services/clinic.models';
 
 @Component({
   selector: 'app-notifications',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, LucideDynamicIcon],
   templateUrl: './notifications.html',
   styleUrl: './notifications.css'
 })
 export class Notifications {
-  activeTab = 'all';
+  readonly ArrowRightIcon = LucideArrowRight;
 
-  notifications = [
-    {
-      type: 'APPROVAL',
-      title: 'Your appointment is approved',
-      doctor: 'Dr. Amelia Brooks · Thu, 12 Nov · 09:00–09:30 AM',
-      message: 'Your visit is confirmed. Please arrive 15 minutes early.',
-      time: 'Today · 09:20 AM',
-      action: 'View appointment →',
-      unread: true
-    },
-    {
-      type: 'SCHEDULE UPDATE',
-      title: 'New times available with Dr. Amelia Brooks',
-      doctor: 'Monday, 16 November · General medicine',
-      message: 'Additional morning appointments are now open for booking.',
-      time: 'Today · 08:45 AM',
-      action: 'View schedule →',
-      unread: true
-    },
-    {
-      type: 'REJECTION',
-      title: 'Your appointment request was not approved',
-      doctor: 'Dr. James Carter · Mon, 09 Nov · 02:00 PM',
-      message: 'The doctor is unavailable. Please choose another date.',
-      time: '09 Nov · 10:15 AM',
-      action: 'Find another time →',
-      unread: false
-    },
-    {
-      type: 'CANCELLATION',
-      title: 'Your appointment was cancelled',
-      doctor: 'Dr. Maya Patel · Thu, 05 Nov · 11:00 AM',
-      message: 'Cancelled at your request. You can book a new visit anytime.',
-      time: '04 Nov · 03:30 PM',
-      action: 'Book a new visit →',
-      unread: false
-    }
-  ];
+  private readonly router = inject(Router);
+  private readonly booking = inject(BookingModalService);
+  private readonly clinic = inject(ClinicStore);
+  readonly mine = inject(PatientAppointmentsService);
 
-  setTab(tab: string) {
-    this.activeTab = tab;
+  readonly activeTab = signal<'all' | 'unread'>('all');
+
+  readonly visible = computed(() =>
+    this.activeTab() === 'unread' ? this.mine.notifications().filter(n => !n.read) : this.mine.notifications()
+  );
+
+  setTab(tab: 'all' | 'unread') {
+    this.activeTab.set(tab);
   }
 
   markAllAsRead() {
-    this.notifications.forEach(n => n.unread = false);
+    this.clinic.markAllRead(this.mine.patient.id);
   }
 
-  get unreadCount(): number {
-    return this.notifications.filter(notification => notification.unread).length;
+  label(n: PatientNotification): string {
+    switch (n.action.kind) {
+      case 'view-appointment': return 'View appointment';
+      case 'view-doctor': return 'View schedule';
+      default: return n.type === 'REJECTION' ? 'Find another time' : 'Book a new visit';
+    }
+  }
+
+  /** Runs a notification's action and marks it as read. */
+  open(n: PatientNotification) {
+    this.clinic.markRead(n.id);
+    const action = n.action;
+    switch (action.kind) {
+      case 'view-appointment':
+        this.mine.view(action.appointmentId);
+        break;
+      case 'view-doctor':
+        this.router.navigate(['/patient/doctor-details', action.doctorId]);
+        break;
+      case 'book':
+        this.booking.open(action.doctorId);
+        break;
+    }
   }
 }

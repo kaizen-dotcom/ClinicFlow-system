@@ -1,22 +1,21 @@
-import { Component } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { LucideDynamicIcon, LucideMenu, LucideSearch, LucideChevronDown } from '@lucide/angular';
+import { RouterLink } from '@angular/router';
+import { LucideDynamicIcon, LucideBell, LucideChevronDown } from '@lucide/angular';
+import { ClinicStore } from '../../services/clinic-store.service';
 
 @Component({
   selector: 'app-navbar',
   standalone: true,
-  imports: [CommonModule, LucideDynamicIcon],
+  imports: [CommonModule, RouterLink, LucideDynamicIcon],
   templateUrl: './navbar.html',
   styleUrls: ['./navbar.css']
 })
 export class NavbarComponent {
-  // Expose icons for the HTML
-  readonly MenuIcon = LucideMenu;
-  readonly SearchIcon = LucideSearch;
+  readonly BellIcon = LucideBell;
   readonly ChevronDownIcon = LucideChevronDown;
 
-  // Hardcoded for now, we will connect this to real data later
-  currentDate = 'Tuesday, 10 Nov 2026';
-  adminName = 'Sarah Mitchell';
-  adminRole = 'Administrator';
+  readonly clinic = inject(ClinicStore);
+  readonly today = new Date();
+  readonly pendingCount = computed(() => this.clinic.appointments().filter(a => a.status === 'Pending').length);
 }

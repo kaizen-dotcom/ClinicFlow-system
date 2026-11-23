@@ -1,28 +1,25 @@
 <header class="navbar">
-  <!-- Left Side: Hamburger + Search -->
   <div class="nav-left">
-    <button class="icon-btn">
-      <svg [lucideIcon]="MenuIcon" size="20"></svg>
-    </button>
-
-    <div class="search-box">
-      <svg [lucideIcon]="SearchIcon" size="18" class="search-icon"></svg>
-      <input type="text" placeholder="Search for patients, doctors, or appointments..." />
-    </div>
+    <span class="clinic-name">{{ clinic.admin().clinicName }}</span>
   </div>
 
-  <!-- Right Side: Date + Profile -->
   <div class="nav-right">
-    <span class="nav-date">{{ currentDate }}</span>
-    
+    <span class="nav-date">{{ today | date: 'EEEE, d MMM y' }}</span>
+
+    <a routerLink="/admin/appointments" [queryParams]="{ status: 'Pending' }" class="bell"
+       [attr.aria-label]="pendingCount() + ' pending requests'" title="Pending requests">
+      <svg [lucideIcon]="BellIcon" size="18"></svg>
+      @if (pendingCount()) { <span class="bell-count">{{ pendingCount() }}</span> }
+    </a>
+
     <div class="nav-divider"></div>
 
-    <div class="profile-menu">
+    <a routerLink="/admin/settings" class="profile-menu" title="Profile & settings">
       <div class="profile-info">
-        <span class="profile-name">{{ adminName }}</span>
-        <span class="profile-role">{{ adminRole }}</span>
+        <span class="profile-name">{{ clinic.admin().fullName }}</span>
+        <span class="profile-role">Administrator</span>
       </div>
       <svg [lucideIcon]="ChevronDownIcon" size="16" class="chevron"></svg>
-    </div>
+    </a>
   </div>
 </header>

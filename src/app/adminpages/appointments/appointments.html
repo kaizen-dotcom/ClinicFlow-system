@@ -1,36 +1,50 @@
 <!-- Page Header -->
 <div class="page-header">
   <h1>Appointment management</h1>
-  <button class="btn-primary">+ New appointment</button>
+  <button class="btn-primary" (click)="ui.newAppointment()">+ New appointment</button>
 </div>
 
 <!-- 1. Stat Cards -->
 <div class="stats-grid">
-  <div class="stat-card" *ngFor="let stat of statCards">
-    <span class="stat-label">{{ stat.label }}</span>
-    <div class="stat-value">{{ stat.value }}</div>
-    <span class="stat-subtext">{{ stat.subtext }}</span>
-  </div>
+  @for (stat of statCards(); track stat.label) {
+    <div class="stat-card">
+      <span class="stat-label">{{ stat.label }}</span>
+      <div class="stat-value">{{ stat.value }}</div>
+      <span class="stat-subtext">{{ stat.subtext }}</span>
+    </div>
+  }
 </div>
+
+@if (message) { <p class="cf-alert cf-alert-success page-message" role="status">{{ message }}</p> }
 
 <!-- Main Container -->
 <div class="section-container">
-  
+
   <!-- 2. Tabs -->
-  <div class="tabs-header">
-    <div class="tab" *ngFor="let tab of tabs" [class.active]="tab.active">
-      {{ tab.label }} 
-      <span *ngIf="tab.count" class="tab-count">{{ tab.count }}</span>
-    </div>
+  <div class="tabs-header" role="tablist">
+    @for (tab of tabs(); track tab.value) {
+      <button type="button" role="tab" class="tab" [class.active]="status() === tab.value"
+              [attr.aria-selected]="status() === tab.value" (click)="setFilter(() => status.set(tab.value))">
+        {{ tab.label }}
+        <span class="tab-count">{{ tab.count }}</span>
+      </button>
+    }
   </div>
 
   <!-- 3. Filter Bar -->
   <div class="filter-bar">
-    <input type="text" placeholder="Search patient or appointment ID" class="filter-input">
-    <select class="filter-select"><option>All doctors</option></select>
-    <select class="filter-select"><option>Nov 2026</option></select>
-    <select class="filter-select"><option>All statuses</option></select>
-    <a href="#" class="reset-link">Reset</a>
+    <input type="search" placeholder="Search patient name, patient ID or appointment ID" class="filter-input"
+           aria-label="Search appointments" [ngModel]="search()" (ngModelChange)="setFilter(() => search.set($event))">
+    <select class="filter-select" aria-label="Doctor" [ngModel]="doctorId()" (ngModelChange)="setFilter(() => doctorId.set($event))">
+      <option value="">All doctors</option>
+      @for (d of clinic.doctors(); track d.id) { <option [value]="d.id">{{ d.name }}</option> }
+    </select>
+    <select class="filter-select" aria-label="Month" [ngModel]="month()" (ngModelChange)="setFilter(() => month.set($event))">
+      <option value="">All dates</option>
+      @for (m of months(); track m) { <option [value]="m">{{ m + '-01' | date: 'MMM y' }}</option> }
+    </select>
+    <button type="button" class="reset-link" (click)="reset()">Reset</button>
+    <button type="button" class="btn-secondary" (click)="exportCsv()">Export CSV</button>
   </div>
 
   <!-- 4. Table -->
@@ -47,45 +61,49 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let appt of appointments">
-          <td class="font-medium">{{ appt.id }}</td>
-          <td class="font-medium">{{ appt.patient }}</td>
-          <td class="text-muted">{{ appt.doctor }}</td>
-          <td class="text-muted">{{ appt.dateTime }}</td>
-          <td>
-            <span class="badge" [ngClass]="getStatusClass(appt.status)">
-              {{ appt.status }}
-            </span>
-          </td>
-          <td>
-            <!-- Dynamic Actions based on status -->
-            <div class="actions-cell" *ngIf="appt.status === 'Pending'">
-              <a href="#" class="action-approve">Approve</a> / 
-              <a href="#" class="action-reject">Reject</a>
-            </div>
-            <div class="actions-cell" *ngIf="appt.status === 'Approved'">
-              <a href="#" class="action-link">View</a> / 
-              <a href="#" class="action-reject">Cancel</a>
-            </div>
-            <div class="actions-cell" *ngIf="appt.status !== 'Pending' && appt.status !== 'Approved'">
-              <a href="#" class="action-link">View details</a>
-            </div>
-          </td>
-        </tr>
+        @for (appt of pageItems(); track appt.id) {
+          <tr>
+            <td class="font-medium">{{ appt.id }}</td>
+            <td class="font-medium">{{ appt.patient }} <span class="text-muted">· {{ appt.patientId }}</span></td>
+            <td class="text-muted">{{ appt.doctor }}</td>
+            <td class="text-muted">{{ appt.date | date: 'MMM d, y' }}, {{ appt.start }}</td>
+            <td><span class="badge" [ngClass]="getStatusClass(appt.status)">{{ appt.status }}</span></td>
+            <td>
+              <div class="actions-cell">
+                @switch (appt.status) {
+                  @case ('Pending') {
+                    <button type="button" class="link-btn approve" (click)="approve(appt)">Approve</button> /
+                    <button type="button" class="link-btn" (click)="ui.review(appt.id)">Review</button>
+                  }
+                  @case ('Approved') {
+                    <button type="button" class="link-btn" (click)="ui.review(appt.id)">View / complete</button>
+                  }
+                  @default {
+                    <button type="button" class="link-btn" (click)="ui.review(appt.id)">View details</button>
+                  }
+                }
+              </div>
+            </td>
+          </tr>
+        } @empty {
+          <tr><td colspan="6" class="cf-empty">No appointments match these filters.</td></tr>
+        }
       </tbody>
     </table>
   </div>
 
   <!-- 5. Pagination -->
   <div class="table-footer">
-    <span class="text-muted">Showing 9 of 248 appointments</span>
-    <div class="pagination">
-      <button class="page-btn">&lsaquo;</button>
-      <button class="page-btn active">1</button>
-      <button class="page-btn">2</button>
-      <button class="page-btn">3</button>
-      <button class="page-btn">&rsaquo;</button>
-    </div>
+    <span class="text-muted">{{ rangeLabel() }}</span>
+    @if (pageCount() > 1) {
+      <div class="pagination">
+        <button class="page-btn" [disabled]="page() <= 1" (click)="page.set(page() - 1)" aria-label="Previous page">&lsaquo;</button>
+        @for (p of [].constructor(pageCount()); track $index) {
+          <button class="page-btn" [class.active]="page() === $index + 1" (click)="page.set($index + 1)">{{ $index + 1 }}</button>
+        }
+        <button class="page-btn" [disabled]="page() >= pageCount()" (click)="page.set(page() + 1)" aria-label="Next page">&rsaquo;</button>
+      </div>
+    }
   </div>
 
 </div>

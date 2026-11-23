@@ -4,12 +4,28 @@
   </div>
 
   <div class="nav-right">
-    <div class="profile-menu">
+    <button
+      type="button"
+      class="theme-toggle"
+      (click)="theme.toggle()"
+      [attr.aria-label]="theme.theme() === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'"
+      [attr.title]="theme.theme() === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'"
+      [attr.aria-pressed]="theme.theme() === 'dark'">
+      <svg [lucideIcon]="theme.theme() === 'dark' ? SunIcon : MoonIcon" size="18"></svg>
+    </button>
+
+    <a routerLink="/patient/notifications" class="theme-toggle bell"
+       [attr.aria-label]="'Notifications, ' + mine.unreadCount() + ' unread'" title="Notifications">
+      <svg [lucideIcon]="BellIcon" size="18"></svg>
+      @if (mine.unreadCount()) { <span class="bell-count">{{ mine.unreadCount() }}</span> }
+    </a>
+
+    <a routerLink="/patient/profile" class="profile-menu" title="My profile">
       <div class="profile-info">
-        <span class="profile-name">{{ patientName }}</span>
-        <span class="profile-role">{{ patientId }}</span>
+        <span class="profile-name">{{ mine.patient.fullName }}</span>
+        <span class="profile-role">Patient · {{ mine.patient.id }}</span>
       </div>
       <svg [lucideIcon]="ChevronDownIcon" size="16" class="chevron"></svg>
-    </div>
+    </a>
   </div>
 </header>

@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
+import { AuthService } from '../../../auth/auth.service';
 // 1. Import LucideIcon (the dynamic directive) and the specific icons
 import {
   LucideDynamicIcon,
@@ -11,7 +12,7 @@ import {
   LucideClock,
   LucideBarChart2,
   LucideUser,
-  LucidePlus,
+  LucideArrowUpRight,
   LucideLogOut
 } from '@lucide/angular';
 
@@ -24,9 +25,11 @@ import {
   styleUrls: ['./sidebar.css']
 })
 export class SidebarComponent {
-  readonly PlusIcon = LucidePlus;
+  readonly ArrowUpRightIcon = LucideArrowUpRight;
   readonly logoutIcon = LucideLogOut;
   showLogoutConfirm = false;
+
+  constructor(private router: Router, private auth: AuthService) {}
 
   menuItems = [
     { label: 'Dashboard', icon: LucideLayoutDashboard, route: '/admin/dashboard' },
@@ -48,6 +51,7 @@ export class SidebarComponent {
 
   logout(): void {
     this.showLogoutConfirm = false;
-    window.location.href = '/login';
+    this.auth.logout();
+    this.router.navigateByUrl('/login');
   }
 }

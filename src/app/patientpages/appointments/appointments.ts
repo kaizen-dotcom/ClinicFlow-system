@@ -1,88 +1,44 @@
-import { Component } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { LucideDynamicIcon, LucideArrowRight } from '@lucide/angular';
 import { RouterModule } from '@angular/router';
+import { BookingModalService } from '../../shared/services/booking-modal.service';
+import { PatientAppointmentsService } from '../../shared/services/patient-appointments.service';
+
+type Tab = 'all' | 'upcoming' | 'previous';
 
 @Component({
   selector: 'app-my-appointments',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, LucideDynamicIcon],
   templateUrl: './appointments.html',
   styleUrl: './appointments.css'
 })
 export class MyAppointments {
-  activeTab = 'all';
+  readonly ArrowRightIcon = LucideArrowRight;
 
-  tabs = [
-    { label: 'All appointments', value: 'all', count: null },
-    { label: 'Upcoming', value: 'upcoming', count: 2 },
-    { label: 'Previous', value: 'previous', count: 5 }
-  ];
+  readonly booking = inject(BookingModalService);
+  readonly store = inject(PatientAppointmentsService);
 
-  appointments = [
-    {
-      date: '12 Nov 2026',
-      time: '09:00–09:30 AM',
-      doctor: 'Dr. Amelia Brooks',
-      type: 'General consultation',
-      location: 'Room 204',
-      status: 'Approved',
-      action: 'View / cancel'
-    },
-    {
-      date: '18 Nov 2026',
-      time: '10:30–11:00 AM',
-      doctor: 'Dr. Daniel Kim',
-      type: 'Follow-up consultation',
-      location: 'Room 108',
-      status: 'Pending',
-      action: 'View / cancel'
-    },
-    {
-      date: '09 Nov 2026',
-      time: '02:00–02:30 PM',
-      doctor: 'Dr. James Carter',
-      type: 'Skin consultation',
-      location: 'Room 302',
-      status: 'Rejected',
-      action: 'View details'
-    },
-    {
-      date: '05 Nov 2026',
-      time: '11:00–11:30 AM',
-      doctor: 'Dr. Maya Patel',
-      type: 'Dental check-up',
-      location: 'Room 105',
-      status: 'Cancelled',
-      action: 'View details'
-    },
-    {
-      date: '03 Nov 2026',
-      time: '09:00–09:30 AM',
-      doctor: 'Dr. Amelia Brooks',
-      type: 'General consultation',
-      location: 'Room 204',
-      status: 'Completed',
-      action: 'View details'
-    },
-    {
-      date: '21 Oct 2026',
-      time: '10:00–10:30 AM',
-      doctor: 'Dr. Daniel Kim',
-      type: 'Heart health review',
-      location: 'Room 108',
-      status: 'Completed',
-      action: 'View details'
-    },
-    {
-      date: '07 Oct 2026',
-      time: '11:00–11:30 AM',
-      doctor: 'Dr. Maya Patel',
-      type: 'Dental check-up',
-      location: 'Room 105',
-      status: 'Completed',
-      action: 'View details'
+  private readonly tab = signal<Tab>('all');
+  get activeTab(): Tab { return this.tab(); }
+
+  private readonly upcoming = computed(() => this.store.appointments().filter(a => this.store.isUpcoming(a)));
+  private readonly previous = computed(() => this.store.appointments().filter(a => !this.store.isUpcoming(a)));
+
+  readonly tabs = computed(() => [
+    { label: 'All appointments', value: 'all' as Tab, count: null },
+    { label: 'Upcoming', value: 'upcoming' as Tab, count: this.upcoming().length },
+    { label: 'Previous', value: 'previous' as Tab, count: this.previous().length }
+  ]);
+
+  readonly visible = computed(() => {
+    switch (this.tab()) {
+      case 'upcoming': return this.upcoming();
+      case 'previous': return this.previous();
+      default: return this.store.appointments();
     }
-  ];
+  });
 
   getStatusClass(status: string): string {
     switch (status.toLowerCase()) {
@@ -95,7 +51,7 @@ export class MyAppointments {
     }
   }
 
-  setTab(tab: string) {
-    this.activeTab = tab;
+  setTab(tab: Tab) {
+    this.tab.set(tab);
   }
 }

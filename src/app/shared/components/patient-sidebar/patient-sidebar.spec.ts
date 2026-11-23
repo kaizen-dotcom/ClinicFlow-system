@@ -1,3 +1,4 @@
+import { provideRouter } from '@angular/router';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { PatientSidebarComponent } from './patient-sidebar';
 
@@ -8,6 +9,7 @@ describe('PatientSidebar', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [PatientSidebarComponent],
+      providers: [provideRouter([])],
     }).compileComponents();
 
     fixture = TestBed.createComponent(PatientSidebarComponent);

@@ -19,27 +19,6 @@
 }
 
 /* --- Tabs --- */
-.tabs-header {
-  display: flex;
-  border-bottom: 1px solid var(--border-color);
-  margin-bottom: 24px;
-}
-.tab {
-  padding: 16px 0;
-  margin-right: 32px;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text-muted);
-  cursor: pointer;
-  border-bottom: 2px solid transparent;
-}
-.tab:hover {
-  color: var(--text-main);
-}
-.tab.active {
-  color: var(--primary-green);
-  border-bottom-color: var(--primary-green);
-}
 
 /* --- Sections --- */
 .section-card {
@@ -83,11 +62,7 @@
   grid-template-columns: 1fr 1fr;
   gap: 20px;
 }
-.preferences-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 24px;
-}
+
 .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -125,10 +100,7 @@
 }
 
 /* Password Row */
-.password-row {
-  display: flex;
-  gap: 12px;
-}
+
 .helper-text {
   font-size: 12px;
   color: var(--text-muted);
@@ -187,3 +159,8 @@
   color: var(--text-muted);
   margin-top: 16px;
 }
+.settings-container { display: flex; flex-direction: column; gap: 24px; }
+.settings-container > form { display: flex; flex-direction: column; gap: 16px; }
+.password-form { display: flex; flex-direction: column; gap: 12px; max-width: 560px; }
+.saved { color: var(--success-text); }
+.btn-outline:disabled, .btn-primary:disabled { opacity: 0.55; cursor: not-allowed; }

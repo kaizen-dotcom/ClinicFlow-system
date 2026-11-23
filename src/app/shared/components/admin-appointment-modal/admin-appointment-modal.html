@@ -1,0 +1,99 @@
+@if (appt(); as a) {
+  <div class="cf-backdrop" (click)="close()">
+    <div class="cf-modal" role="dialog" aria-modal="true" aria-labelledby="aa-title" (click)="$event.stopPropagation()">
+
+      <header class="cf-modal-header">
+        <div>
+          <span class="badge" [ngClass]="'badge-' + a.status.toLowerCase()">{{ a.status }}</span>
+          <h2 id="aa-title">{{ a.type }}</h2>
+          <p>{{ a.id }} · requested {{ a.requestedOn | date: 'd MMM y, h:mm a' }}</p>
+        </div>
+        <button type="button" class="cf-close" aria-label="Close" (click)="close()">&times;</button>
+      </header>
+
+      <div class="cf-modal-body">
+        @if (done) { <p class="cf-alert cf-alert-success" role="status">{{ done }}</p> }
+
+        <section>
+          <h3 class="cf-section-title">Appointment</h3>
+          <dl class="cf-dl">
+            <div><dt>Date</dt><dd>{{ a.date | date: 'EEEE, d MMMM y' }}</dd></div>
+            <div><dt>Time</dt><dd>{{ a.start }}–{{ a.end }} ({{ a.duration }} min)</dd></div>
+            <div><dt>Doctor</dt><dd>{{ a.doctor }} · {{ a.specialty }}</dd></div>
+            <div><dt>Location</dt><dd>{{ a.location }}</dd></div>
+            <div><dt>Visit</dt><dd>{{ a.firstVisit ? 'First visit with this doctor' : 'Returning patient' }}</dd></div>
+            @if (a.clinicNote) { <div><dt>Clinic note</dt><dd>{{ a.clinicNote }}</dd></div> }
+          </dl>
+        </section>
+
+        <section>
+          <h3 class="cf-section-title">Patient</h3>
+          <dl class="cf-dl">
+            <div><dt>Name</dt><dd>{{ a.patient }} ({{ a.patientId }})</dd></div>
+            <div><dt>Date of birth</dt><dd>{{ patient()?.dob ? (patient()!.dob | date: 'd MMM y') : '—' }}</dd></div>
+            <div><dt>Phone</dt><dd>{{ patient()?.phone || '—' }}</dd></div>
+            <div><dt>Email</dt><dd>{{ patient()?.email || '—' }}</dd></div>
+          </dl>
+        </section>
+
+        <section>
+          <h3 class="cf-section-title">Visit information</h3>
+          <dl class="cf-dl cf-stack">
+            <div><dt>Reason for visit</dt><dd>{{ a.reason || '—' }}</dd></div>
+            <div><dt>Allergies / medications</dt><dd>{{ a.notes || 'None provided' }}</dd></div>
+            @if (a.visitSummary) { <div><dt>Doctor's notes</dt><dd>{{ a.visitSummary }}</dd></div> }
+          </dl>
+        </section>
+
+        <section>
+          <h3 class="cf-section-title">Status history</h3>
+          <ol class="cf-timeline">
+            @for (e of a.history; track $index) {
+              <li><strong>{{ e.label }}</strong><span>{{ e.date | date: 'd MMM y · h:mm a' }}</span></li>
+            }
+          </ol>
+        </section>
+
+        @if (mode !== 'view') {
+          <label class="cf-field">
+            <span>
+              @switch (mode) {
+                @case ('approve') { Note for the patient (optional) }
+                @case ('reject') { Reason for rejecting (required — shown to the patient) }
+                @case ('cancel') { Reason for cancelling (shown to the patient) }
+                @case ('complete') { Doctor's notes / visit summary (optional — shown to the patient) }
+              }
+            </span>
+            <textarea rows="3" [(ngModel)]="text"
+                      [placeholder]="mode === 'approve' ? 'Default: arrive 15 minutes early with ID and medication list.' : ''"></textarea>
+          </label>
+          @if (error) { <p class="cf-alert cf-alert-error" role="alert">{{ error }}</p> }
+        }
+      </div>
+
+      <footer class="cf-modal-footer">
+        @if (mode === 'view') {
+          @if (a.status === 'Pending') {
+            <button type="button" class="btn-secondary cf-left" (click)="setMode('reject')">Reject</button>
+            <button type="button" class="btn-primary" (click)="setMode('approve')">Approve</button>
+          } @else if (a.status === 'Approved') {
+            <button type="button" class="btn-secondary cf-left" (click)="setMode('cancel')">Cancel appointment</button>
+            <button type="button" class="btn-primary" (click)="setMode('complete')">Mark as completed</button>
+          }
+          <button type="button" class="btn-secondary" (click)="close()">Close</button>
+        } @else {
+          <button type="button" class="btn-secondary" (click)="setMode('view')">Back</button>
+          <button type="button" [class]="mode === 'reject' || mode === 'cancel' ? 'btn-danger' : 'btn-primary'" (click)="confirm()">
+            @switch (mode) {
+              @case ('approve') { Confirm approval }
+              @case ('reject') { Reject request }
+              @case ('cancel') { Cancel appointment }
+              @case ('complete') { Mark as completed }
+            }
+          </button>
+        }
+      </footer>
+
+    </div>
+  </div>
+}

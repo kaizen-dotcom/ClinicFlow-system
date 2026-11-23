@@ -1,8 +1,11 @@
-.navbar {
+:host {
+  display: block;
   position: sticky;
   top: 0;
-  z-index: 1000;
+  z-index: 100;
+}
 
+.navbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -21,51 +24,7 @@
   flex: 1;
 }
 
-.icon-btn {
-  background: none;
-  border: none;
-  color: var(--text-muted);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 8px;
-  border-radius: 6px;
-  transition: background 0.2s;
-}
-
-.icon-btn:hover {
-  background-color: var(--bg-main);
-  color: var(--text-main);
-}
-
-.search-box {
-  display: flex;
-  align-items: center;
-  background-color: var(--bg-main);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  padding: 8px 16px;
-  width: 100%;
-  max-width: 450px;
-  gap: 10px;
-}
-
 .search-icon {
-  color: var(--text-muted);
-}
-
-.search-box input {
-  border: none;
-  background: transparent;
-  outline: none;
-  width: 100%;
-  font-size: 14px;
-  color: var(--text-main);
-  font-family: inherit;
-}
-
-.search-box input::placeholder {
   color: var(--text-muted);
 }
 
@@ -122,4 +81,37 @@
 
 .chevron {
   color: var(--text-muted);
+}
+.clinic-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--clinic-primary);
+}
+
+.profile-menu { text-decoration: none; }
+
+.bell {
+  position: relative;
+  display: inline-flex;
+  padding: 8px;
+  border-radius: 50%;
+  color: var(--text-muted);
+}
+
+.bell:hover { background-color: var(--bg-main); color: var(--text-main); }
+
+.bell-count {
+  position: absolute;
+  top: 0;
+  right: 0;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: #dc2626;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
 }

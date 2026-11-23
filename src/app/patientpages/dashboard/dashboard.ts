@@ -1,40 +1,47 @@
-import { Component } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
+import { LucideDynamicIcon, LucideArrowRight } from '@lucide/angular';
+import { BookingModalService } from '../../shared/services/booking-modal.service';
+import { PatientAppointmentsService } from '../../shared/services/patient-appointments.service';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterLink, LucideDynamicIcon],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css'
 })
 export class DashboardComponent {
-  patientName = 'Emma';
-  
-  nextVisit = {
-    type: 'General consultation',
-    doctor: 'Dr. Amelia Brooks',
-    specialty: 'General medicine',
-    date: 'Thursday, 12 November',
-    time: '09:00–09:30 AM',
-    location: 'ClinicFlow · Room 204',
-    status: 'Approved',
-    note: 'Please arrive 15 minutes before your appointment.'
-  };
+  readonly ArrowRightIcon = LucideArrowRight;
 
-  stats = [
-    { value: '01', label: 'Upcoming visit' },
-    { value: '01', label: 'Pending request' },
-    { value: '03', label: 'Completed visits' }
-  ];
+  readonly booking = inject(BookingModalService);
+  readonly store = inject(PatientAppointmentsService);
 
-  recentActivity = [
-    { type: 'Follow-up consultation', doctor: 'Dr. Daniel Kim', date: '18 Nov · 10:30 AM', status: 'Pending' },
-    { type: 'General consultation', doctor: 'Dr. Amelia Brooks', date: '12 Nov · 09:00 AM', status: 'Approved' }
-  ];
+  get patientName(): string {
+    return this.store.patient.fullName.split(' ')[0];
+  }
+
+  /** Soonest approved visit, or else the soonest pending one. */
+  readonly nextVisit = computed(() => {
+    const upcoming = this.store.appointments().filter(a => this.store.isUpcoming(a));
+    return upcoming.find(a => a.status === 'Approved') ?? upcoming[0] ?? null;
+  });
+
+  readonly stats = computed(() => {
+    const all = this.store.appointments();
+    const count = (status: string) => String(all.filter(a => a.status === status).length).padStart(2, '0');
+    return [
+      { value: count('Approved'), label: 'Upcoming visit' },
+      { value: count('Pending'), label: 'Pending request' },
+      { value: count('Completed'), label: 'Completed visits' }
+    ];
+  });
+
+  readonly recentActivity = computed(() => this.store.appointments().slice(0, 3));
 
   getStatusClass(status: string): string {
-    switch(status.toLowerCase()) {
+    switch (status.toLowerCase()) {
       case 'approved': return 'badge-approved';
       case 'pending': return 'badge-pending';
       default: return 'badge-default';

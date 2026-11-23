@@ -1,29 +1,40 @@
 <!-- Page Header -->
 <div class="page-header">
   <h1>Patient management</h1>
-  <button class="btn-primary">+ Add patient</button>
+  <button class="btn-primary" (click)="openAdd()">+ Add patient</button>
 </div>
 
 <!-- 1. Stat Cards -->
 <div class="stats-grid">
-  <div class="stat-card" *ngFor="let stat of statCards">
-    <span class="stat-label">{{ stat.label }}</span>
-    <div class="stat-value">{{ stat.value }}</div>
-    <span class="stat-subtext" [class.positive]="stat.isPositive">
-      {{ stat.subtext }}
-    </span>
-  </div>
+  @for (stat of statCards(); track stat.label) {
+    <div class="stat-card">
+      <span class="stat-label">{{ stat.label }}</span>
+      <div class="stat-value">{{ stat.value }}</div>
+      <span class="stat-subtext" [class.positive]="stat.isPositive">{{ stat.subtext }}</span>
+    </div>
+  }
 </div>
+
+@if (message) { <p class="cf-alert cf-alert-success page-message" role="status">{{ message }}</p> }
 
 <!-- Main Container -->
 <div class="section-container">
-  
+
   <!-- 2. Filter Bar -->
   <div class="filter-bar">
-    <input type="text" placeholder="Search by patient name or phone" class="filter-input">
-    <select class="filter-select"><option>All statuses</option></select>
-    <select class="filter-select"><option>Registration date</option></select>
-    <button class="btn-outline">Export CSV</button>
+    <input type="search" placeholder="Search by name, email, phone or patient ID" class="filter-input" aria-label="Search patients"
+           [ngModel]="search()" (ngModelChange)="setFilter(() => search.set($event))">
+    <select class="filter-select" aria-label="Status" [ngModel]="status()" (ngModelChange)="setFilter(() => status.set($event))">
+      <option value="">All statuses</option>
+      <option value="Active">Active</option>
+      <option value="Inactive">Inactive</option>
+    </select>
+    <select class="filter-select" aria-label="Sort" [ngModel]="sort()" (ngModelChange)="setFilter(() => sort.set($event))">
+      <option value="newest">Newest registrations</option>
+      <option value="oldest">Oldest registrations</option>
+      <option value="name">Name A–Z</option>
+    </select>
+    <button class="btn-outline" (click)="exportCsv()">Export CSV</button>
   </div>
 
   <!-- 3. Table -->
@@ -31,44 +42,152 @@
     <table class="data-table">
       <thead>
         <tr>
-          <th>PATIENT NAME</th>
+          <th>PATIENT</th>
           <th>CONTACT</th>
           <th>REGISTERED</th>
+          <th>VISITS</th>
           <th>STATUS</th>
           <th>ACTIONS</th>
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let patient of patients">
-          <td class="font-medium">{{ patient.name }}</td>
-          <td class="text-muted">{{ patient.contact }}</td>
-          <td class="text-muted">{{ patient.registered }}</td>
-          <td>
-            <span class="badge" [ngClass]="getStatusClass(patient.status)">
-              {{ patient.status }}
-            </span>
-          </td>
-          <td>
-            <div class="actions-cell">
-              <a href="#" class="action-link">View</a> / 
-              <a href="#" class="action-link">Edit</a>
-            </div>
-          </td>
-        </tr>
+        @for (patient of pageItems(); track patient.id) {
+          <tr>
+            <td class="font-medium">{{ patient.fullName }} <span class="text-muted">· {{ patient.id }}</span></td>
+            <td class="text-muted">{{ patient.email }}<br>{{ patient.phone }}</td>
+            <td class="text-muted">{{ patient.registeredOn | date: 'dd MMM y' }}</td>
+            <td class="text-muted">{{ visitCount(patient.id) }}</td>
+            <td><span class="badge" [ngClass]="getStatusClass(patient.status)">{{ patient.status }}</span></td>
+            <td>
+              <div class="actions-cell">
+                <button type="button" class="link-btn" (click)="viewingId.set(patient.id)">View</button> /
+                <button type="button" class="link-btn" (click)="openEdit(patient)">Edit</button>
+              </div>
+            </td>
+          </tr>
+        } @empty {
+          <tr><td colspan="6" class="cf-empty">No patients match these filters.</td></tr>
+        }
       </tbody>
     </table>
   </div>
 
   <!-- 4. Pagination -->
   <div class="table-footer">
-    <span class="text-muted">Showing 1-9 of 1,284 patients</span>
-    <div class="pagination">
-      <button class="page-btn">&lsaquo;</button>
-      <button class="page-btn active">1</button>
-      <button class="page-btn">2</button>
-      <button class="page-btn">3</button>
-      <button class="page-btn">&rsaquo;</button>
+    <span class="text-muted">{{ rangeLabel() }}</span>
+    @if (pageCount() > 1) {
+      <div class="pagination">
+        <button class="page-btn" [disabled]="page() <= 1" (click)="page.set(page() - 1)" aria-label="Previous page">&lsaquo;</button>
+        @for (p of [].constructor(pageCount()); track $index) {
+          <button class="page-btn" [class.active]="page() === $index + 1" (click)="page.set($index + 1)">{{ $index + 1 }}</button>
+        }
+        <button class="page-btn" [disabled]="page() >= pageCount()" (click)="page.set(page() + 1)" aria-label="Next page">&rsaquo;</button>
+      </div>
+    }
+  </div>
+</div>
+
+<!-- Patient details -->
+@if (viewing(); as p) {
+  <div class="cf-backdrop" (click)="viewingId.set(null)">
+    <div class="cf-modal cf-wide" role="dialog" aria-modal="true" aria-labelledby="pv-title" (click)="$event.stopPropagation()">
+      <header class="cf-modal-header">
+        <div>
+          <span class="badge" [ngClass]="getStatusClass(p.status)">{{ p.status }}</span>
+          <h2 id="pv-title">{{ p.fullName }}</h2>
+          <p>{{ p.id }} · registered {{ p.registeredOn | date: 'd MMM y' }}</p>
+        </div>
+        <button type="button" class="cf-close" aria-label="Close" (click)="viewingId.set(null)">&times;</button>
+      </header>
+      <div class="cf-modal-body">
+        <section>
+          <h3 class="cf-section-title">Contact & personal details</h3>
+          <dl class="cf-dl">
+            <div><dt>Email</dt><dd>{{ p.email }}</dd></div>
+            <div><dt>Phone</dt><dd>{{ p.phone || '—' }}</dd></div>
+            <div><dt>Date of birth</dt><dd>{{ p.dob ? (p.dob | date: 'd MMM y') : '—' }}</dd></div>
+            <div><dt>Gender</dt><dd>{{ p.gender || '—' }}</dd></div>
+            <div class="cf-span-2"><dt>Address</dt><dd>{{ p.address || '—' }}</dd></div>
+            <div><dt>Email updates</dt><dd>{{ p.emailUpdates ? 'On' : 'Off' }}</dd></div>
+          </dl>
+        </section>
+        <section>
+          <h3 class="cf-section-title">Appointments ({{ viewingAppointments().length }})</h3>
+          <table class="data-table">
+            <tbody>
+              @for (a of viewingAppointments(); track a.id) {
+                <tr>
+                  <td class="text-muted">{{ a.date | date: 'd MMM y' }} · {{ a.start }}</td>
+                  <td>{{ a.doctor }}<br><span class="text-muted">{{ a.type }}</span></td>
+                  <td><span class="badge" [ngClass]="apptClass(a.status)">{{ a.status }}</span></td>
+                  <td><button type="button" class="link-btn" (click)="ui.review(a.id)">Open</button></td>
+                </tr>
+              } @empty {
+                <tr><td class="cf-empty">No appointments yet.</td></tr>
+              }
+            </tbody>
+          </table>
+        </section>
+      </div>
+      <footer class="cf-modal-footer">
+        <button type="button" class="btn-secondary cf-left" (click)="toggleStatus(p)">
+          {{ p.status === 'Active' ? 'Deactivate account' : 'Reactivate account' }}
+        </button>
+        <button type="button" class="btn-secondary" (click)="viewingId.set(null); openEdit(p)">Edit</button>
+        @if (p.status === 'Active') {
+          <button type="button" class="btn-primary" (click)="bookFor(p)">Book appointment</button>
+        }
+      </footer>
     </div>
   </div>
+}
 
-</div>
+<!-- Add / edit patient -->
+@if (editing; as e) {
+  <div class="cf-backdrop" (click)="editing = null">
+    <div class="cf-modal" role="dialog" aria-modal="true" aria-labelledby="pe-title" (click)="$event.stopPropagation()">
+      <header class="cf-modal-header">
+        <div>
+          <h2 id="pe-title">{{ e.id ? 'Edit patient' : 'Add patient' }}</h2>
+          <p>{{ e.id ? e.id : 'Register a patient at the front desk. They can log in with a temporary password.' }}</p>
+        </div>
+        <button type="button" class="cf-close" aria-label="Close" (click)="editing = null">&times;</button>
+      </header>
+      <form #pf="ngForm" (ngSubmit)="save(pf)" novalidate>
+        <div class="cf-modal-body">
+          <div class="cf-grid">
+            <label class="cf-field cf-span-2"><span>Full name *</span>
+              <input name="fullName" [(ngModel)]="e.fullName" required #fn="ngModel">
+              @if (formSubmitted && fn.invalid) { <small class="cf-error">Required.</small> }
+            </label>
+            <label class="cf-field"><span>Email *</span>
+              <input type="email" name="email" [(ngModel)]="e.email" required email #em="ngModel">
+              @if (formSubmitted && em.invalid) { <small class="cf-error">Enter a valid email.</small> }
+            </label>
+            <label class="cf-field"><span>Phone *</span>
+              <input type="tel" name="phone" [(ngModel)]="e.phone" required #ph="ngModel">
+              @if (formSubmitted && ph.invalid) { <small class="cf-error">Required.</small> }
+            </label>
+            <label class="cf-field"><span>Date of birth *</span>
+              <input type="date" name="dob" [(ngModel)]="e.dob" required #db="ngModel">
+              @if (formSubmitted && db.invalid) { <small class="cf-error">Required.</small> }
+            </label>
+            <label class="cf-field"><span>Gender</span>
+              <select name="gender" [(ngModel)]="e.gender">
+                <option>Female</option><option>Male</option><option>Other</option><option>Prefer not to say</option>
+              </select>
+            </label>
+            <label class="cf-field cf-span-2"><span>Address</span>
+              <input name="address" [(ngModel)]="e.address">
+            </label>
+          </div>
+          @if (formError) { <p class="cf-alert cf-alert-error" role="alert">{{ formError }}</p> }
+        </div>
+        <footer class="cf-modal-footer">
+          <button type="button" class="btn-secondary" (click)="editing = null">Cancel</button>
+          <button type="submit" class="btn-primary">{{ e.id ? 'Save changes' : 'Add patient' }}</button>
+        </footer>
+      </form>
+    </div>
+  </div>
+}

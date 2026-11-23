@@ -1,0 +1,98 @@
+@if (store.viewing(); as a) {
+  <div class="backdrop" (click)="close()">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="appt-title" (click)="$event.stopPropagation()">
+
+      <header class="modal-header">
+        <div>
+          <span class="badge" [ngClass]="'badge-' + a.status.toLowerCase()">{{ a.status }}</span>
+          <h2 id="appt-title">{{ a.type }}</h2>
+          <p>Reference · {{ a.id }}</p>
+        </div>
+        <button type="button" class="icon-btn" aria-label="Close" (click)="close()">&times;</button>
+      </header>
+
+      <div class="modal-body">
+
+        <!-- Status message -->
+        @if (a.clinicNote) {
+          <div class="note" [ngClass]="'note-' + a.status.toLowerCase()">{{ a.clinicNote }}</div>
+        }
+
+        <!-- Appointment -->
+        <section>
+          <h3>Appointment</h3>
+          <dl>
+            <div><dt>Date</dt><dd>{{ a.date | date: 'EEEE, d MMMM y' }}</dd></div>
+            <div><dt>Time</dt><dd>{{ a.start }}–{{ a.end }} · 30 min</dd></div>
+            <div><dt>Doctor</dt><dd>{{ a.doctor }}<small>{{ a.specialty }}</small></dd></div>
+            <div><dt>Location</dt><dd>{{ a.location }}<small>120 Wellness Avenue</small></dd></div>
+            <div><dt>Appointment type</dt><dd>{{ a.type }}</dd></div>
+            <div><dt>Visit</dt><dd>{{ a.firstVisit ? 'First visit with this doctor' : 'Returning patient' }}</dd></div>
+            <div><dt>Requested on</dt><dd>{{ a.requestedOn | date: 'd MMM y · h:mm a' }}</dd></div>
+          </dl>
+        </section>
+
+        <!-- Patient -->
+        <section>
+          <h3>Patient</h3>
+          <dl>
+            <div><dt>Name</dt><dd>{{ store.patient.fullName }}</dd></div>
+            <div><dt>Patient ID</dt><dd>{{ store.patient.id }}</dd></div>
+            <div><dt>Date of birth</dt><dd>{{ store.patient.dob | date: 'd MMM y' }}</dd></div>
+            <div><dt>Gender</dt><dd>{{ store.patient.gender }}</dd></div>
+            <div><dt>Phone</dt><dd>{{ store.patient.phone }}</dd></div>
+            <div><dt>Email</dt><dd>{{ store.patient.email }}</dd></div>
+          </dl>
+        </section>
+
+        <!-- Visit information -->
+        <section>
+          <h3>Visit information</h3>
+          <dl class="stack">
+            <div><dt>Reason for visit</dt><dd>{{ a.reason }}</dd></div>
+            <div><dt>Allergies / medications</dt><dd>{{ a.notes || 'None provided' }}</dd></div>
+            @if (a.visitSummary) {
+              <div><dt>Doctor's notes</dt><dd>{{ a.visitSummary }}</dd></div>
+            }
+          </dl>
+        </section>
+
+        <!-- Status history -->
+        <section>
+          <h3>Status history</h3>
+          <ol class="timeline">
+            @for (e of a.history; track $index) {
+              <li><strong>{{ e.label }}</strong><span>{{ e.date | date: 'd MMM y · h:mm a' }}</span></li>
+            }
+          </ol>
+        </section>
+
+        <!-- Cancel confirmation -->
+        @if (confirmingCancel) {
+          <div class="cancel-box">
+            <label for="cancel-reason">Reason for cancelling (optional)</label>
+            <textarea id="cancel-reason" rows="2" [(ngModel)]="cancelReason" placeholder="e.g. Schedule conflict"></textarea>
+            <p>Your time slot will be released to other patients.</p>
+          </div>
+        }
+      </div>
+
+      <footer class="modal-footer">
+        @if (confirmingCancel) {
+          <button type="button" class="btn-secondary" (click)="confirmingCancel = false">Keep appointment</button>
+          <button type="button" class="btn-danger" (click)="confirmCancel(a)">Yes, cancel appointment</button>
+        } @else {
+          @if (canCancel(a)) {
+            <button type="button" class="btn-danger-outline" (click)="confirmingCancel = true">Cancel appointment</button>
+          } @else {
+            <button type="button" class="btn-secondary" (click)="bookAgain(a)">
+              {{ a.status === 'Completed' ? 'Book follow-up' : 'Book again' }}
+            </button>
+          }
+          <button type="button" class="btn-primary" (click)="close()">Close</button>
+        }
+      </footer>
+
+    </div>
+  </div>
+}

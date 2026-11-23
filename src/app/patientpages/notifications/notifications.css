@@ -52,6 +52,11 @@
   font-weight: 600;
 }
 .mark-read {
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-family: inherit;
   font-size: 13px;
   color: var(--clinic-primary);
   text-decoration: none;
@@ -76,7 +81,7 @@
   border-bottom: none;
 }
 .notification-item.unread {
-  background-color: #F0F7FF;
+  background-color: var(--info-bg);
   border-left: 3px solid var(--clinic-primary);
   padding-left: 21px;
 }
@@ -121,6 +126,11 @@
   margin-bottom: 12px;
 }
 .notif-action {
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-family: inherit;
   font-size: 13px;
   color: var(--clinic-primary);
   text-decoration: none;

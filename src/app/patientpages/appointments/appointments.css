@@ -71,7 +71,7 @@
   font-weight: 600;
   padding: 16px 24px;
   border-bottom: 1px solid var(--border-color);
-  background-color: #FAFBFC;
+  background-color: var(--bg-subtle);
 }
 .data-table td {
   padding: 20px 24px;
@@ -121,15 +121,20 @@
   font-size: 12px;
   font-weight: 500;
 }
-.badge-approved { background-color: #D1FAE5; color: #065F46; }
-.badge-pending { background-color: #FEF3C7; color: #92400E; }
-.badge-completed { background-color: #DBEAFE; color: #1E40AF; }
-.badge-rejected { background-color: #FEE2E2; color: #991B1B; }
-.badge-cancelled { background-color: #F1F5F9; color: #475569; }
-.badge-default { background-color: #F1F5F9; color: #475569; }
+.badge-approved { background-color: var(--badge-green-bg); color: var(--badge-green-text); }
+.badge-pending { background-color: var(--badge-amber-bg); color: var(--badge-amber-text); }
+.badge-completed { background-color: var(--badge-blue-bg); color: var(--badge-blue-text); }
+.badge-rejected { background-color: var(--badge-red-bg); color: var(--badge-red-text); }
+.badge-cancelled { background-color: var(--badge-gray-bg); color: var(--badge-gray-text); }
+.badge-default { background-color: var(--badge-gray-bg); color: var(--badge-gray-text); }
 
 /* --- Action Link --- */
 .action-link {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: inherit;
   color: var(--clinic-primary);
   text-decoration: none;
   font-size: 13px;
@@ -150,8 +155,8 @@
 
 /* --- Info Banner --- */
 .info-banner {
-  background-color: #F0F7FF;
-  border: 1px solid #BAE0FD;
+  background-color: var(--info-bg);
+  border: 1px solid var(--info-border);
   border-radius: 8px;
   padding: 20px 24px;
 }
