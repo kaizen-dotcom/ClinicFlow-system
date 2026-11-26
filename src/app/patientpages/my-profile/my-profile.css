@@ -244,3 +244,11 @@
 .form-message { margin: 0 0 12px; padding: 10px 12px; border-radius: 8px; font-size: 13px; }
 .form-message.success { background: var(--success-bg); color: var(--success-text); }
 .form-message.failure { background: var(--danger-bg); color: var(--danger-text); }
+
+/* Date picker: match .form-control. */
+app-date-picker {
+  --dp-padding: 10px 12px;
+  --dp-border: 1px solid var(--border-color);
+  --dp-radius: 6px;
+  --dp-font-size: 14px;
+}

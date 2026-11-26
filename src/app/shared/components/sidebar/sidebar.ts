@@ -12,7 +12,10 @@ import {
   LucideClock,
   LucideBarChart2,
   LucideUser,
-  LucideLogOut
+  LucideLogOut,
+  LucideLayoutGrid,
+  LucideChevronDown,
+  LucideChevronUp
 } from '@lucide/angular';
 
 @Component({
@@ -25,6 +28,10 @@ import {
 })
 export class SidebarComponent {
   readonly logoutIcon = LucideLogOut;
+  readonly mainIcon = LucideLayoutGrid;
+  readonly openIcon = LucideChevronUp;
+  readonly closedIcon = LucideChevronDown;
+  menuOpen = true;
   showLogoutConfirm = false;
 
   constructor(private router: Router, private auth: AuthService) {}
@@ -36,8 +43,12 @@ export class SidebarComponent {
     { label: 'Doctors', icon: LucideStethoscope, route: '/admin/doctors' },
     { label: 'Schedules', icon: LucideClock, route: '/admin/schedules' },
     { label: 'Reports', icon: LucideBarChart2, route: '/admin/reports' },
-    { label: 'Profile & settings', icon: LucideUser, route: '/admin/settings' }
+    { label: 'Profile and settings', icon: LucideUser, route: '/admin/settings' }
   ];
+
+  toggleMenu(): void {
+    this.menuOpen = !this.menuOpen;
+  }
 
   confirmLogout(): void {
     this.showLogoutConfirm = true;

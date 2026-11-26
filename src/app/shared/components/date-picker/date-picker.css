@@ -1,0 +1,170 @@
+/* Each form can match its own inputs by setting the --dp-* variables on app-date-picker. */
+:host {
+  display: block;
+  width: 100%;
+  --dp-accent: #0b6e75; /* the teal of the ClinicFlow logo */
+}
+
+.dp-field { position: relative; }
+
+.dp-field input {
+  width: 100%;
+  font-family: inherit;
+  font-size: var(--dp-font-size, 0.9rem);
+  font-weight: 400;
+  padding: var(--dp-padding, 9px 11px);
+  padding-right: 42px;
+  border: var(--dp-border, 1px solid var(--clinic-border));
+  border-radius: var(--dp-radius, 8px);
+  background: var(--dp-bg, var(--bg-card));
+  color: var(--dp-color, var(--text-main));
+  outline: none;
+}
+.dp-field input:focus {
+  border-color: var(--clinic-primary);
+  box-shadow: 0 0 0 3px rgba(32, 84, 134, 0.15);
+}
+.dp-field input:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.dp-toggle {
+  position: absolute;
+  /* Centred without transform, so a pressed button can't shift away from the pointer. */
+  top: 0;
+  bottom: 0;
+  right: 6px;
+  height: 28px;
+  margin: auto 0;
+  display: inline-flex;
+  padding: 5px;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.dp-toggle:hover:not(:disabled) { background: var(--bg-subtle); color: var(--dp-accent); }
+/* No press animation on the icon (overrides the app-wide button effect in styles.css). */
+.dp-field button.dp-toggle:not(:disabled) { transition: none; }
+.dp-field button.dp-toggle:not(:disabled):active { transform: none; }
+
+/* ---------- Popup card ---------- */
+.dp-popup {
+  position: fixed;
+  inset: auto;
+  z-index: 10002;
+  width: min(304px, calc(100vw - 16px));
+  margin: 0;
+  padding: 14px;
+  overflow: visible;
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  background: var(--bg-card);
+  color: var(--text-main);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.22);
+  font-size: 0.85rem;
+  font-weight: 400;
+}
+
+.dp-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.dp-popup .dp-header select {
+  width: auto;
+  min-width: 0;
+  padding: 6px 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-card);
+  color: var(--text-main);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.dp-popup .dp-header .dp-month { flex: 1; }
+
+.dp-nav {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: var(--text-main);
+  cursor: pointer;
+}
+
+.dp-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  justify-items: center;
+  row-gap: 2px;
+}
+
+.dp-weekdays {
+  margin-bottom: 4px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.dp-day {
+  width: 34px;
+  max-width: 100%;
+  height: 34px;
+  padding: 0;
+  border: 1.5px solid transparent;
+  border-radius: 50%;
+  background: none;
+  color: var(--text-main);
+  font: inherit;
+  cursor: pointer;
+}
+.dp-day.outside { color: var(--text-light); }
+.dp-day.today { border-color: var(--dp-accent); font-weight: 700; }
+.dp-day:hover:not(:disabled), .dp-nav:hover:not(:disabled) { background: var(--bg-subtle); }
+.dp-day.selected, .dp-day.selected:hover:not(:disabled) {
+  background: var(--dp-accent);
+  border-color: var(--dp-accent);
+  color: #fff;
+  font-weight: 700;
+}
+.dp-day:disabled, .dp-nav:disabled {
+  color: var(--text-light);
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.dp-popup button:focus-visible, .dp-popup select:focus-visible, .dp-toggle:focus-visible {
+  outline: 2px solid var(--clinic-primary);
+  outline-offset: 1px;
+}
+
+.dp-footer {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-color);
+}
+
+.dp-link {
+  padding: 4px 8px;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: var(--clinic-primary);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.dp-link:hover:not(:disabled) { background: var(--bg-subtle); }
+.dp-link:disabled { color: var(--text-light); cursor: not-allowed; }

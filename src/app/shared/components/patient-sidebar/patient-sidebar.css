@@ -7,6 +7,9 @@
   color: white;
   position: sticky;
   top: 0;
+  /* Sticky creates a stacking context, so this must sit above page content and
+     the navbar or the logout dialog inside it gets painted underneath them. */
+  z-index: 200;
 }
 .sidebar-brand {
   display: flex;
@@ -48,36 +51,48 @@
 }
 .sidebar-nav {
   flex: 1;
-  padding: 20px 12px;
+  padding: 16px 12px;
   overflow-y: auto;
 }
 .sidebar-nav ul {
   list-style: none;
   padding: 0;
-  margin: 0;
+  margin: 4px 0 0 8px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
 }
 .nav-link {
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 10px 16px;
-  border-radius: 6px;
-  color: var(--sidebar-text);
+  border-radius: 8px;
+  color: #e6edf5;
   font-size: 14px;
   font-weight: 500;
   transition: all 0.2s ease;
   text-decoration: none;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
 }
 .nav-link:hover {
   background-color: var(--sidebar-hover);
   color: white;
 }
 .nav-link.active {
-  background-color: var(--sidebar-active);
   color: white;
+  font-weight: 700;
+}
+.menu-toggle {
+  color: white;
+  font-weight: 700;
+}
+.menu-toggle .chevron {
+  margin-left: auto;
 }
 .nav-link svg {
   display: flex;
@@ -112,24 +127,9 @@
   color: var(--sidebar-text);
   opacity: 0.7;
 }
-.nav-button {
-  background: transparent;
-  border: none;
-  width: 100%;
-  text-align: left;
-  cursor: pointer;
-  font-family: inherit;
-  font-size: inherit;
-}
 .logout-link {
-  background: transparent;
-  border: none;
-  width: 100%;
-  text-align: left;
-  cursor: pointer;
-  font-family: inherit;
   color: #ff6b6b;
-  margin-top: 8px;
+  margin-top: 20px;
 }
 .logout-link:hover {
   background-color: rgba(220, 53, 69, 0.18);

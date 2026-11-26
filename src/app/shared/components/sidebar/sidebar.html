@@ -12,22 +12,27 @@
 
   <!-- Navigation Links -->
   <nav class="sidebar-nav">
-    <ul>
+    <button type="button" class="nav-link menu-toggle" aria-controls="sidebar-menu"
+            [attr.aria-expanded]="menuOpen" (click)="toggleMenu()">
+      <svg [lucideIcon]="mainIcon" size="18"></svg>
+      Main
+      <svg class="chevron" [lucideIcon]="menuOpen ? openIcon : closedIcon" size="18"></svg>
+    </button>
+
+    <ul id="sidebar-menu" *ngIf="menuOpen">
       <li *ngFor="let item of menuItems">
-        <a [routerLink]="item.route" routerLinkActive="active" class="nav-link">
+        <a [routerLink]="item.route" routerLinkActive="active" ariaCurrentWhenActive="page" class="nav-link">
           <!-- FIXED: Use svg with lucideIcon binding -->
           <svg [lucideIcon]="item.icon" size="18"></svg>
           {{ item.label }}
         </a>
       </li>
-
-      <li>
-        <button type="button" class="nav-link logout-link" (click)="confirmLogout()">
-          <svg [lucideIcon]="logoutIcon" size="18"></svg>
-          Log out
-        </button>
-      </li>
     </ul>
+
+    <button type="button" class="nav-link logout-link" (click)="confirmLogout()">
+      <svg [lucideIcon]="logoutIcon" size="18"></svg>
+      Log out
+    </button>
   </nav>
 
   <!-- Version Area -->

@@ -379,3 +379,11 @@ button.schedule-block {
 .booked-list { list-style: none; margin: 0 0 12px; padding: 0; font-size: 13px; display: grid; gap: 6px; }
 .block-actions { display: flex; justify-content: flex-end; gap: 8px; }
 .divider { border: 0; border-top: 1px solid var(--border-color); margin: 20px 0; }
+
+/* Date picker: match .form-control. */
+app-date-picker {
+  --dp-padding: 10px 12px;
+  --dp-border: 1px solid var(--border-color);
+  --dp-radius: 6px;
+  --dp-font-size: 13px;
+}

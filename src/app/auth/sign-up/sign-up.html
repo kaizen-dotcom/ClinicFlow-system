@@ -35,8 +35,8 @@
       <!-- Date of birth -->
       <div class="form-group">
         <label for="dob">Date of birth</label>
-        <input type="date" id="dob" name="dob" [max]="maxDob"
-               [(ngModel)]="form.dob" required #dob="ngModel" autocomplete="bday" />
+        <app-date-picker inputId="dob" name="dob" [max]="maxDob"
+                         [(ngModel)]="form.dob" required #dob="ngModel" />
         @if (submitted && dob.invalid) { <small class="field-error">Date of birth is required.</small> }
       </div>
 

@@ -8,16 +8,19 @@ import { BookingModalService } from '../../services/booking-modal.service';
 import { ClinicStore } from '../../services/clinic-store.service';
 import { PatientAppointmentsService } from '../../services/patient-appointments.service';
 import { APPOINTMENT_TYPES, Slot } from '../../services/clinic.models';
-import { minutes } from '../../utils/time';
+import { minutes, todayISO } from '../../utils/time';
+import { DatePicker } from '../date-picker/date-picker';
 
 @Component({
   selector: 'app-book-appointment-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideX],
+  imports: [CommonModule, FormsModule, LucideX, DatePicker],
   templateUrl: './book-appointment-modal.html',
   styleUrl: './book-appointment-modal.css'
 })
 export class BookAppointmentModal {
+  /** Latest date of birth accepted. */
+  readonly today = todayISO();
   readonly modal = inject(BookingModalService);
   readonly clinic = inject(ClinicStore);
   private readonly mine = inject(PatientAppointmentsService);

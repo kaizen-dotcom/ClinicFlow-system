@@ -7,6 +7,7 @@ import { LucideDynamicIcon, LucideCalendarDays, LucideChevronDown, LucideChevron
 import { ClinicStore } from '../../shared/services/clinic-store.service';
 import { ScheduleBlock } from '../../shared/services/clinic.models';
 import { addDays, addWeekdays, isWeekend, minutes, startOfWeek, to12h, todayISO } from '../../shared/utils/time';
+import { DatePicker } from '../../shared/components/date-picker/date-picker';
 
 /** Calendar shows 08:00–18:00 in 30-minute rows. */
 const DAY_START = 8 * 60;
@@ -16,7 +17,7 @@ const ROW_MIN = 30;
 @Component({
   selector: 'app-schedules',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideDynamicIcon],
+  imports: [CommonModule, FormsModule, LucideDynamicIcon, DatePicker],
   templateUrl: './schedules.html',
   styleUrl: './schedules.css'
 })

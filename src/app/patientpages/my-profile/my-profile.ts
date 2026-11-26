@@ -5,15 +5,19 @@ import { FormsModule, NgForm } from '@angular/forms';
 import { ClinicStore } from '../../shared/services/clinic-store.service';
 import { PatientAppointmentsService } from '../../shared/services/patient-appointments.service';
 import { ChangePassword } from '../../shared/components/change-password/change-password';
+import { todayISO } from '../../shared/utils/time';
+import { DatePicker } from '../../shared/components/date-picker/date-picker';
 
 @Component({
   selector: 'app-my-profile',
   standalone: true,
-  imports: [CommonModule, FormsModule, ChangePassword],
+  imports: [CommonModule, FormsModule, ChangePassword, DatePicker],
   templateUrl: './my-profile.html',
   styleUrl: './my-profile.css'
 })
 export class MyProfile {
+  /** Latest date of birth accepted. */
+  readonly today = todayISO();
   private readonly clinic = inject(ClinicStore);
   private readonly toast = inject(ToastService);
   private readonly cdr = inject(ChangeDetectorRef);

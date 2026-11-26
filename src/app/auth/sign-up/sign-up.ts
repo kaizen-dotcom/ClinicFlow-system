@@ -2,11 +2,13 @@ import { ChangeDetectorRef, Component, inject, signal } from '@angular/core';
 import { FormsModule, NgForm } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../auth.service';
+import { todayISO } from '../../shared/utils/time';
+import { DatePicker } from '../../shared/components/date-picker/date-picker';
 
 @Component({
   selector: 'app-signup',
   standalone: true,
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, DatePicker],
   templateUrl: './sign-up.html',
   styleUrl: './sign-up.css',
 })
@@ -33,7 +35,7 @@ export class Signup {
   busy = false;
 
   /** Latest date of birth accepted (today). */
-  readonly maxDob = new Date().toISOString().slice(0, 10);
+  readonly maxDob = todayISO();
 
   get passwordTooShort(): boolean {
     return this.form.password.length > 0 && this.form.password.length < 8;

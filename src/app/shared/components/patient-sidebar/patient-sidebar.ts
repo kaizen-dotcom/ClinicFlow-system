@@ -12,7 +12,10 @@ import {
   LucideCalendar,
   LucideBell,
   LucideUser,
-  LucideLogOut
+  LucideLogOut,
+  LucideLayoutGrid,
+  LucideChevronDown,
+  LucideChevronUp
 } from '@lucide/angular';
 
 @Component({
@@ -25,6 +28,10 @@ import {
 export class PatientSidebarComponent {
   readonly logoutIcon = LucideLogOut;
   readonly clinic = inject(ClinicStore);
+  readonly mainIcon = LucideLayoutGrid;
+  readonly openIcon = LucideChevronUp;
+  readonly closedIcon = LucideChevronDown;
+  menuOpen = true;
   showLogoutConfirm = false;
 
   constructor(private router: Router, private auth: AuthService, public booking: BookingModalService) {}
@@ -38,6 +45,10 @@ export class PatientSidebarComponent {
     { label: 'Notifications', icon: LucideBell, route: '/patient/notifications' },
     { label: 'My profile', icon: LucideUser, route: '/patient/profile' }
   ];
+
+  toggleMenu(): void {
+    this.menuOpen = !this.menuOpen;
+  }
 
   confirmLogout(): void {
     this.showLogoutConfirm = true;

@@ -24,11 +24,11 @@
                   @if (submitted && fullName.invalid) { <small class="error">Full name is required.</small> }
                 </label>
 
-                <label class="field">
+                <div class="field">
                   <span>Date of birth *</span>
-                  <input type="date" name="dob" [(ngModel)]="form.dob" required #dob="ngModel" />
+                  <app-date-picker name="dob" ariaLabel="Date of birth" [max]="today" [(ngModel)]="form.dob" required #dob="ngModel" />
                   @if (submitted && dob.invalid) { <small class="error">Date of birth is required.</small> }
-                </label>
+                </div>
 
                 <label class="field">
                   <span>Gender</span>

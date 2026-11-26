@@ -1,0 +1,61 @@
+<div class="dp-field" #field>
+  <input #box type="text" inputmode="numeric" autocomplete="off" placeholder="mm/dd/yyyy" maxlength="10"
+         [id]="inputId() ?? null" [attr.aria-label]="ariaLabel() ?? null"
+         [value]="text()" [disabled]="disabled()"
+         (input)="onType(box.value)" (blur)="onBlurInput()"
+         (click)="show()" (keydown.arrowdown)="$event.preventDefault(); openFromKeyboard()" />
+  <button type="button" class="dp-toggle" aria-label="Open calendar" aria-haspopup="dialog"
+          [attr.aria-expanded]="open()" [disabled]="disabled()" (click)="toggle()">
+    <svg lucideCalendar size="18"></svg>
+  </button>
+</div>
+
+@if (open()) {
+  <div #popup class="dp-popup" popover="manual" role="dialog" aria-label="Choose a date">
+    <div class="dp-header">
+      <button type="button" class="dp-nav" aria-label="Previous month" [disabled]="!canGoBack()" (click)="moveMonth(-1)">
+        <svg lucideChevronLeft size="18"></svg>
+      </button>
+
+      <select class="dp-month" aria-label="Month" (change)="showMonth(year(), +monthSelect.value)" #monthSelect>
+        @for (m of months(); track m.index) {
+          <option [value]="m.index" [selected]="m.index === month()" [disabled]="m.disabled">{{ m.name }}</option>
+        }
+      </select>
+      <select class="dp-year" aria-label="Year" (change)="showMonth(+yearSelect.value, month())" #yearSelect>
+        @for (y of years(); track y) {
+          <option [value]="y" [selected]="y === year()">{{ y }}</option>
+        }
+      </select>
+
+      <button type="button" class="dp-nav" aria-label="Next month" [disabled]="!canGoForward()" (click)="moveMonth(1)">
+        <svg lucideChevronRight size="18"></svg>
+      </button>
+    </div>
+
+    <div class="dp-grid dp-weekdays" aria-hidden="true">
+      @for (name of weekdays; track name) { <span>{{ name }}</span> }
+    </div>
+
+    <div (keydown)="onGridKey($event)">
+      @for (week of weeks(); track $index) {
+        <div class="dp-grid">
+          @for (d of week; track d.iso) {
+            <button type="button" class="dp-day"
+                    [class.outside]="d.outside" [class.today]="d.today" [class.selected]="d.iso === value()"
+                    [attr.data-date]="d.iso" [attr.aria-label]="d.label" [attr.aria-pressed]="d.iso === value()"
+                    [attr.aria-current]="d.today ? 'date' : null"
+                    [tabindex]="d.iso === cursor() ? 0 : -1" [disabled]="d.disabled" (click)="pick(d.iso)">
+              {{ d.day }}
+            </button>
+          }
+        </div>
+      }
+    </div>
+
+    <div class="dp-footer">
+      <button type="button" class="dp-link dp-clear" (click)="clear()">Clear</button>
+      <button type="button" class="dp-link dp-today" [disabled]="!todayAllowed()" (click)="pick(today())">Today</button>
+    </div>
+  </div>
+}

@@ -208,3 +208,13 @@
   color: #b91c1c;
   font-size: 0.875rem;
 }
+
+/* Date picker: match the other sign-up inputs. */
+.form-group app-date-picker {
+  --dp-padding: 12px 12px 11px;
+  --dp-border: 1.5px solid #bfd0df;
+  --dp-radius: 10px;
+  --dp-font-size: 15px;
+  --dp-bg: #fdfefe;
+  --dp-color: #203a52;
+}

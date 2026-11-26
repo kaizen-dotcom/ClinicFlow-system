@@ -8,6 +8,7 @@ import { ClinicStore } from '../../shared/services/clinic-store.service';
 import { Patient } from '../../shared/services/clinic.models';
 import { downloadCsv } from '../../shared/utils/csv';
 import { addDays, todayISO } from '../../shared/utils/time';
+import { DatePicker } from '../../shared/components/date-picker/date-picker';
 
 const PAGE_SIZE = 10;
 
@@ -16,11 +17,13 @@ type PatientForm = Pick<Patient, 'fullName' | 'email' | 'phone' | 'dob' | 'gende
 @Component({
   selector: 'app-patients',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucidePlus, LucideChevronLeft, LucideChevronRight, LucideX],
+  imports: [CommonModule, FormsModule, DatePicker, LucidePlus, LucideChevronLeft, LucideChevronRight, LucideX],
   templateUrl: './patients.html',
   styleUrl: './patients.css'
 })
 export class PatientsComponent {
+  /** Latest date of birth accepted. */
+  readonly today = todayISO();
   readonly ui = inject(AdminUiService);
   private readonly clinic = inject(ClinicStore);
   private readonly toast = inject(ToastService);

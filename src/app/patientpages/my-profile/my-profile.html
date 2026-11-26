@@ -30,8 +30,8 @@
       <!-- Date of Birth + Gender -->
       <div class="form-row">
         <div class="form-group">
-          <label>Date of birth *</label>
-          <input type="date" class="form-control" [(ngModel)]="profile.dob" name="dob" required>
+          <label for="profile-dob">Date of birth *</label>
+          <app-date-picker inputId="profile-dob" name="dob" [max]="today" [(ngModel)]="profile.dob" required />
         </div>
         <div class="form-group">
           <label>Gender</label>

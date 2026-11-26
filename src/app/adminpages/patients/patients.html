@@ -170,10 +170,10 @@
               <input type="tel" name="phone" [(ngModel)]="e.phone" required #ph="ngModel">
               @if (formSubmitted && ph.invalid) { <small class="cf-error">Required.</small> }
             </label>
-            <label class="cf-field"><span>Date of birth *</span>
-              <input type="date" name="dob" [(ngModel)]="e.dob" required #db="ngModel">
+            <div class="cf-field"><span>Date of birth *</span>
+              <app-date-picker name="dob" ariaLabel="Date of birth" [max]="today" [(ngModel)]="e.dob" required #db="ngModel" />
               @if (formSubmitted && db.invalid) { <small class="cf-error">Required.</small> }
-            </label>
+            </div>
             <label class="cf-field"><span>Gender</span>
               <select name="gender" [(ngModel)]="e.gender">
                 <option>Female</option><option>Male</option><option>Other</option><option>Prefer not to say</option>
