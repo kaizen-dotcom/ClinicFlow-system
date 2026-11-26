@@ -1,7 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { LucideDynamicIcon, LucideChevronDown, LucideMoon, LucideSun, LucideBell, LucideMenu } from '@lucide/angular';
+import { LucideDynamicIcon, LucideChevronDown, LucideMoon, LucideSun, LucideBell, LucideMenu, LucideUser } from '@lucide/angular';
 import { MenuService } from '../../services/menu.service';
 import { LiveBadge } from '../live-badge/live-badge';
 import { ThemeService } from '../../services/theme.service';
@@ -21,6 +21,7 @@ export class PatientNavbarComponent {
   readonly SunIcon = LucideSun;
   readonly MoonIcon = LucideMoon;
   readonly BellIcon = LucideBell;
+  readonly UserIcon = LucideUser;
 
   readonly theme = inject(ThemeService);
   readonly mine = inject(PatientAppointmentsService);

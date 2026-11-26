@@ -11,3 +11,9 @@
   align-items: center;
   padding: 24px;
 }
+
+@media (max-width: 600px) {
+  /* Fit the visible screen, allowing for the phone browser's address bar. */
+  :host { min-height: 100dvh; }
+  .auth-main { padding: 16px 12px; }
+}

@@ -8,6 +8,7 @@
 .modal {
   width: min(620px, 100%);
   max-height: calc(100vh - 32px);
+  max-height: calc(100dvh - 32px);
   display: flex; flex-direction: column;
   background: var(--bg-card);
   border-radius: 14px;
@@ -120,4 +121,12 @@ textarea {
   dl { grid-template-columns: 1fr; }
   .modal-header, .modal-body, .modal-footer { padding-left: 16px; padding-right: 16px; }
   .modal-footer { flex-wrap: wrap; }
+}
+
+/* ---------- Phones ---------- */
+@media (max-width: 600px) {
+  .icon-btn { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; }
+  dd small { font-size: 12px; }
+  .modal-footer button { flex: 1 1 40%; margin: 0; }
+  .modal-footer .btn-danger-outline { flex-basis: 100%; }
 }

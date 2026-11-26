@@ -130,6 +130,20 @@ export interface BookingInput {
   firstVisit: boolean;
 }
 
+export const DOCTOR_SPECIALTIES = [
+  'Cardiology',
+  'Dentistry',
+  'Dermatology',
+  'ENT',
+  'General medicine',
+  'Neurology',
+  'Obstetrics and gynecology',
+  'Ophthalmology',
+  'Orthopedics',
+  'Pediatrics',
+  'Psychiatry'
+];
+
 export const APPOINTMENT_TYPES = [
   'General consultation',
   'Follow-up visit',

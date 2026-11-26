@@ -33,32 +33,32 @@
     </thead>
     <tbody>
       <tr *ngFor="let appt of visible()">
-        <td>
+        <td class="cell-date">
           <div class="date-cell">
             <span class="date-main">{{ appt.date | date: 'dd MMM y' }}</span>
             <span class="date-time">{{ appt.start }}–{{ appt.end }}</span>
           </div>
         </td>
-        <td>
+        <td class="cell-doctor">
           <div class="doctor-cell">
             <span class="doctor-name">{{ appt.doctor }}</span>
             <span class="appt-type">{{ appt.type }}</span>
           </div>
         </td>
-        <td class="text-muted">{{ appt.location }}</td>
-        <td>
+        <td class="cell-location text-muted">{{ appt.location }}</td>
+        <td class="cell-status">
           <span class="badge" [ngClass]="getStatusClass(appt.status)">
             {{ appt.status }}
           </span>
         </td>
-        <td>
+        <td class="cell-action">
           <button type="button" class="action-link" (click)="store.view(appt.id)">
             {{ store.isUpcoming(appt) ? 'View / change' : 'View details' }}
             <svg [lucideIcon]="ArrowRightIcon" size="16" class="arrow-icon" aria-hidden="true"></svg>
           </button>
         </td>
       </tr>
-      <tr *ngIf="!visible().length">
+      <tr class="empty-row" *ngIf="!visible().length">
         <td colspan="5" class="cf-empty">No appointments here yet. Use “Book appointment” to request a visit.</td>
       </tr>
     </tbody>

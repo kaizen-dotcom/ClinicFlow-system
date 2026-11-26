@@ -223,3 +223,12 @@
   text-align: left;
   margin-top: 16px;
 }
+
+/* ---------- Phones ---------- */
+@media (max-width: 600px) {
+  .doctor-profile { padding: 0 0 20px; }
+  .specialty-tag { font-size: 12px; }
+  .doctor-meta { flex-direction: column; gap: 4px; }
+  .visit-panel { padding: 16px; }
+  .actions .btn-primary { width: 100%; }
+}

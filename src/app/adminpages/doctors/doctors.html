@@ -98,10 +98,10 @@
               @if (formSubmitted && nm.invalid) { <small class="cf-error">Required.</small> }
             </label>
             <label class="cf-field"><span>Specialty *</span>
-              <input name="specialty" [(ngModel)]="e.specialty" required list="specialty-list" #sp="ngModel">
-              <datalist id="specialty-list">
-                @for (s of clinic.specialties(); track s) { <option [value]="s"></option> }
-              </datalist>
+              <select name="specialty" [(ngModel)]="e.specialty" required #sp="ngModel">
+                <option value="" disabled>Select a specialty</option>
+                @for (s of specialtyOptions(); track s) { <option [value]="s">{{ s }}</option> }
+              </select>
               @if (formSubmitted && sp.invalid) { <small class="cf-error">Required.</small> }
             </label>
             <label class="cf-field cf-span-2"><span>Title / qualifications</span>

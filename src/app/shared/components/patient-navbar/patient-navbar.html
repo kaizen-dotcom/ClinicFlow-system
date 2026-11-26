@@ -24,7 +24,8 @@
       @if (mine.unreadCount()) { <span class="bell-count">{{ mine.unreadCount() }}</span> }
     </a>
 
-    <a routerLink="/patient/profile" class="profile-menu" title="My profile">
+    <a routerLink="/patient/profile" class="profile-menu" title="My profile" aria-label="My profile">
+      <svg [lucideIcon]="UserIcon" size="18" class="profile-icon"></svg>
       <div class="profile-info">
         <span class="profile-name">{{ mine.patient.fullName }}</span>
         <span class="profile-role">Patient · {{ mine.patient.id }}</span>

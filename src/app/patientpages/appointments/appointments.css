@@ -171,3 +171,42 @@
   color: var(--text-muted);
   line-height: 1.6;
 }
+
+/* ---------- Phones ---------- */
+@media (max-width: 600px) {
+  .tabs-bar .tabs { width: 100%; justify-content: space-between; gap: 12px; }
+  .tab { min-height: 48px; white-space: nowrap; }
+  .tab-count { font-size: 12px; }
+  .tabs-bar .btn-primary { width: 100%; margin-bottom: 12px; }
+
+  /* Each appointment is a card, so nothing is hidden off-screen. */
+  .table-wrapper { border-bottom: none; }
+  .data-table, .data-table tbody { display: block; }
+  .data-table thead { display: none; }
+  .data-table tbody tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "date status" "doctor doctor" "location location" "action action";
+    gap: 10px 12px;
+    margin-top: 12px;
+    padding: 16px;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    background: var(--bg-card);
+  }
+  .data-table td { display: block; padding: 0; border: none; }
+  .data-table td.cell-date { grid-area: date; }
+  .data-table td.cell-status { grid-area: status; }
+  .data-table td.cell-doctor { grid-area: doctor; }
+  .data-table td.cell-location { grid-area: location; }
+  .data-table td.cell-action { grid-area: action; }
+  .action-link { width: 100%; min-height: 44px; border: 1px solid var(--clinic-border); border-radius: 8px; font-size: 14px; }
+  .data-table tbody tr.empty-row { display: block; }
+  .footer-note { padding: 16px 0; }
+  .info-banner { padding: 16px; }
+}
+
+@media (max-width: 360px) {
+  .tabs-bar .tabs { gap: 8px; }
+  .tab { font-size: 13px; }
+}

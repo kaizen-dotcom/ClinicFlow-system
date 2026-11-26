@@ -218,3 +218,20 @@
   --dp-bg: #fdfefe;
   --dp-color: #203a52;
 }
+
+/* ---------- Phones ---------- */
+@media (max-width: 600px) {
+  .signup-container { padding: 0; }
+  .signup-card { padding: 24px 18px; }
+
+  /* 16px stops iPhones from zooming in when a field is tapped. */
+  .form-group input { font-size: 16px; }
+  .form-group app-date-picker { --dp-font-size: 16px; }
+
+  /* Bigger tap areas. */
+  .show-button { align-self: stretch; min-width: 60px; font-size: 14px; }
+  .terms-group input { width: 20px; height: 20px; flex-shrink: 0; }
+  .terms-group label { font-size: 14px; }
+  .signup-button { min-height: 48px; }
+  .login-link a { display: inline-block; padding: 10px 6px; }
+}

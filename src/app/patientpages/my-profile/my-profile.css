@@ -67,6 +67,7 @@
   font-size: 14px;
   font-family: inherit;
   color: var(--text-main);
+  background-color: var(--bg-card);
   outline: none;
   box-sizing: border-box;
 }
@@ -251,4 +252,15 @@ app-date-picker {
   --dp-border: 1px solid var(--border-color);
   --dp-radius: 6px;
   --dp-font-size: 14px;
+}
+
+/* ---------- Phones ---------- */
+@media (max-width: 600px) {
+  .profile-form-container, .account-card { padding: 16px; }
+  .form-row { gap: 0; margin-bottom: 0; }
+  .form-control { min-height: 44px; }
+  .form-actions { flex-direction: column; }
+  .form-actions button { width: 100%; min-height: 44px; }
+  .account-label { font-size: 12px; }
+  .toggle-switch { margin: 11px 0; }
 }

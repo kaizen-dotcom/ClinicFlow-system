@@ -12,6 +12,7 @@
 .modal {
   width: min(640px, 100%);
   max-height: calc(100vh - 32px);
+  max-height: calc(100dvh - 32px);
   display: flex;
   flex-direction: column;
   background: var(--bg-card);
@@ -197,3 +198,13 @@ textarea { resize: vertical; }
 .hint { font-weight: 400; color: var(--clinic-muted); }
 .empty { margin: 0; font-size: 0.875rem; color: var(--clinic-muted); }
 .error-box { margin: 0; padding: 10px 12px; border-radius: 8px; background: var(--danger-bg); color: var(--danger-text); font-size: 0.85rem; }
+
+/* ---------- Phones ---------- */
+@media (max-width: 600px) {
+  .icon-btn { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; }
+  input:not([type="checkbox"]), select, .date-chip, .slot-chip { min-height: 44px; }
+  .check { min-height: 44px; align-items: center; }
+  .check input { width: 22px; height: 22px; margin: 0; flex-shrink: 0; }
+  .modal-footer button { flex: 1; }
+  .modal-footer button[type="submit"] { flex: 2; }
+}

@@ -230,3 +230,14 @@
 .badge-default { background-color: var(--badge-gray-bg); color: var(--badge-gray-text); }
 .activity-item.clickable { cursor: pointer; }
 .activity-item.clickable:hover { background-color: var(--clinic-bg); }
+
+.badge-completed { background-color: var(--badge-blue-bg); color: var(--badge-blue-text); }
+.badge-rejected { background-color: var(--badge-red-bg); color: var(--badge-red-text); }
+
+/* ---------- Phones ---------- */
+@media (max-width: 600px) {
+  .next-visit-card, .cta-banner, .activity-item { padding: 16px; }
+  .eyebrow { font-size: 12px; }
+  .visit-action .btn-outline, .cta-banner .btn-primary { width: 100%; min-height: 44px; }
+  .view-all { display: inline-flex; align-items: center; min-height: 44px; }
+}

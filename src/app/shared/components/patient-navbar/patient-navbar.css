@@ -112,3 +112,20 @@
   line-height: 18px;
   text-align: center;
 }
+
+.profile-icon { display: none; }
+
+/* The name is hidden on small screens, so show a profile icon instead of the arrow. */
+@media (max-width: 900px) {
+  .chevron { display: none; }
+  .profile-icon { display: block; }
+  .profile-menu {
+    justify-content: center; width: 40px; height: 40px; padding: 0;
+    border: 1px solid var(--border-color); border-radius: 50%;
+    background: var(--bg-card); color: var(--clinic-primary);
+  }
+}
+
+@media (max-width: 600px) {
+  .theme-toggle { width: 40px; height: 40px; flex-shrink: 0; }
+}

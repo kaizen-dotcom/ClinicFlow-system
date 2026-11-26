@@ -146,3 +146,14 @@
   color: var(--text-muted);
   padding: 24px;
 }
+
+/* ---------- Phones ---------- */
+@media (max-width: 600px) {
+  .tab { min-height: 48px; }
+  .tab-count, .notif-type { font-size: 12px; }
+  .mark-read, .notif-action { display: inline-flex; align-items: center; min-height: 44px; }
+  .notification-item { padding: 16px 16px 8px; }
+  .notification-item.unread { padding-left: 13px; }
+  .notif-message { margin-bottom: 0; }
+  .footer-note { padding: 16px 0; }
+}

@@ -5,7 +5,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ClinicStore } from '../../shared/services/clinic-store.service';
-import { Doctor } from '../../shared/services/clinic.models';
+import { DOCTOR_SPECIALTIES, Doctor } from '../../shared/services/clinic.models';
 import { downloadCsv } from '../../shared/utils/csv';
 import { to12h, todayISO } from '../../shared/utils/time';
 
@@ -31,6 +31,10 @@ export class Doctors {
   formSubmitted = false;
   formError = '';
   saving = false;
+
+  /** Choices for the add/edit form: the standard list plus any specialty already saved on a doctor. */
+  readonly specialtyOptions = computed(() =>
+    [...new Set([...DOCTOR_SPECIALTIES, ...this.clinic.specialties()])].filter(Boolean).sort());
 
   /** Today's working hours per doctor, from the schedule. */
   private readonly hoursToday = computed(() => {

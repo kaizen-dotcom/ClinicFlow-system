@@ -46,6 +46,8 @@ export class DashboardComponent {
     switch (status.toLowerCase()) {
       case 'approved': return 'badge-approved';
       case 'pending': return 'badge-pending';
+      case 'completed': return 'badge-completed';
+      case 'rejected': return 'badge-rejected';
       default: return 'badge-default';
     }
   }

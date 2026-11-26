@@ -205,3 +205,23 @@
   color: #205486;
   font-weight: 600;
 }
+
+/* ---------- Phones ---------- */
+@media (max-width: 600px) {
+  .login-container { align-self: flex-start; padding: 0; }
+  .login-card { padding: 28px 20px; }
+
+  /* 16px stops iPhones from zooming in when a field is tapped. */
+  .form-group input { font-size: 16px; }
+  .form-group label, .login-heading p { font-size: 14px; }
+  .password-wrapper input { padding-right: 68px; }
+
+  /* Bigger tap areas. */
+  .show-password { right: 0; min-width: 56px; min-height: 44px; font-size: 14px; }
+  .form-options { flex-wrap: wrap; gap: 4px 12px; font-size: 14px; }
+  .remember-option, .form-options a { display: inline-flex; align-items: center; min-height: 44px; }
+  .remember-option input { width: 18px; height: 18px; margin: 0; }
+  .login-button { min-height: 48px; font-size: 16px; }
+  .signup-link p { font-size: 14px; }
+  .signup-link a { display: inline-block; padding: 10px 6px; }
+}

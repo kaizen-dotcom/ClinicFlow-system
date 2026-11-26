@@ -175,6 +175,7 @@ html, body {
 .cf-modal {
   width: min(620px, 100%);
   max-height: calc(100vh - 32px);
+  max-height: calc(100dvh - 32px);
   display: flex; flex-direction: column;
   background: var(--bg-card);
   color: var(--text-main);
@@ -458,3 +459,26 @@ app-root .page-content .progress-fill { transition: width 0.5s ease; }
 /* ---------- Icon buttons ---------- */
 .btn-primary svg { flex-shrink: 0; margin-right: 6px; }
 app-root .cf-close, app-root .modal .icon-btn, app-root .page-btn { display: inline-flex; align-items: center; justify-content: center; }
+
+/* ---------- Patient portal on phones ---------- */
+@media (max-width: 600px) {
+  /* 16px stops iPhones from zooming in when a field is tapped. */
+  app-root app-patient-layout input:not([type="checkbox"]),
+  app-root app-patient-layout select,
+  app-root app-patient-layout textarea { font-size: 16px !important; }
+
+  /* Appointment cards replace the wide table. */
+  app-root .page-content app-my-appointments .table-wrapper .data-table { min-width: 0; }
+
+  app-root app-patient-layout .menu-button { align-items: center; justify-content: center; min-width: 40px; min-height: 40px; margin-right: 0; }
+  app-root app-patient-layout .dp-field button.dp-toggle { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; right: 2px; }
+  app-root app-patient-layout .btn-primary,
+  app-root app-patient-layout .btn-secondary,
+  app-root app-patient-layout .btn-danger,
+  app-root app-patient-layout .btn-danger-outline,
+  app-root app-patient-layout .cf-chip { min-height: 44px; }
+}
+
+@media (max-width: 360px) {
+  app-root app-patient-layout .main-content .navbar .nav-right { gap: 4px; }
+}

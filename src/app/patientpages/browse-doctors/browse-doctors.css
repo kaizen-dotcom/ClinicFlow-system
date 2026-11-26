@@ -21,6 +21,8 @@
 }
 .search-input {
   flex: 1;
+  background-color: var(--bg-card);
+  color: var(--text-main);
   padding: 10px 16px;
   border: 1px solid var(--border-color);
   border-radius: 6px;
@@ -158,4 +160,13 @@
   margin: 0 0 16px;
   color: var(--clinic-muted);
   font-size: 14px;
+}
+
+/* ---------- Phones ---------- */
+@media (max-width: 600px) {
+  .search-input, .specialty-select, .search-bar .btn-primary { min-height: 44px; }
+  .doctor-card { flex-direction: column; align-items: stretch; padding: 20px 0; }
+  .doctor-availability { min-width: 0; }
+  .doctor-card .btn-outline { width: 100%; min-height: 44px; }
+  .clear-link { min-height: 44px; }
 }
