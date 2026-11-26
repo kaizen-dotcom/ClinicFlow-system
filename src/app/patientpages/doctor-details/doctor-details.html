@@ -33,17 +33,19 @@
       <!-- Date Selector -->
       <div class="date-selector">
         @for (d of dates(); track d) {
-          <div class="date-item" [class.selected]="d === selectedDate()" (click)="selectDate(d)">
+          <button type="button" class="date-item" [class.selected]="d === selectedDate()"
+                  [attr.aria-pressed]="d === selectedDate()" [attr.aria-label]="d | date: 'EEEE, d MMMM'" (click)="selectDate(d)">
             <span class="date-day">{{ d | date: 'EEE' }}</span>
             <span class="date-number">{{ d | date: 'd' }}</span>
-          </div>
+          </button>
         }
       </div>
 
       <!-- Time Slots -->
       <div class="time-slots">
         @for (slot of slots(); track slot.time) {
-          <div class="slot"
+          <button type="button" class="slot" [disabled]="!slot.available"
+                  [attr.aria-pressed]="slot.time === selectedTime()"
                [class.slot-available]="slot.available && slot.time !== selectedTime()"
                [class.slot-partial]="slot.booked"
                [class.slot-unavailable]="!slot.available && !slot.booked"
@@ -53,7 +55,7 @@
             <span class="slot-status">
               {{ slot.time === selectedTime() ? 'Selected' : slot.booked ? 'Booked' : slot.available ? 'Available' : 'Unavailable' }}
             </span>
-          </div>
+          </button>
         }
       </div>
 
@@ -72,7 +74,7 @@
     <h3>Your visit</h3>
     <div class="visit-detail">
       <span class="visit-label">In-person consultation</span>
-      <span class="visit-value">{{ address }} · {{ doctor.location }}</span>
+      <span class="visit-value">{{ clinicName() }} · {{ doctor.location }}</span>
     </div>
     <p class="visit-note">Please bring a valid ID and your current medication list.</p>
   </div>

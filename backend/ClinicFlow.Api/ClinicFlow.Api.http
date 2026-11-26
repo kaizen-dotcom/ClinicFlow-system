@@ -1,13 +1,16 @@
-@host = http://localhost:5238
+@host = https://localhost:7043
 
 ### Health
 GET {{host}}/api/health
+
+### Clinic contact details (public)
+GET {{host}}/api/clinic
 
 ### Log in as admin (copy the token into @token below)
 POST {{host}}/api/auth/login
 Content-Type: application/json
 
-{ "email": "admin@clinicflow.com", "password": "Admin@123" }
+{ "email": "admin@clinicflow.com", "password": "your-admin-password" }
 
 ###
 @token = paste-token-here

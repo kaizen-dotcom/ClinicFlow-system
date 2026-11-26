@@ -68,10 +68,19 @@
 
       <!-- Action Buttons -->
       <div class="form-actions">
-        <button type="submit" class="btn-primary">Save changes</button>
+        <button type="submit" class="btn-primary" [disabled]="saving" [class.is-busy]="saving">Save changes</button>
         <button type="button" class="btn-outline" (click)="discard(profileForm)" [disabled]="profileForm.pristine">Discard changes</button>
       </div>
     </form>
+
+    <!-- Password -->
+    <div class="notifications-section">
+      <div class="notif-text">
+        <h3>Password</h3>
+        <p>Signed up at the front desk? Replace your temporary password here.</p>
+      </div>
+      <app-change-password />
+    </div>
 
     <!-- Appointment Notifications Section -->
     <div class="notifications-section">

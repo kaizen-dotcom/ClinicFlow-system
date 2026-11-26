@@ -54,7 +54,17 @@
           </ol>
         </section>
 
-        @if (mode !== 'view') {
+        @if (mode === 'view' && !started() && a.status === 'Approved') {
+          <p class="cf-alert cf-alert-info">Completing or marking a no-show becomes available once the visit time arrives.</p>
+        }
+        @if (mode === 'view' && started() && a.status === 'Pending') {
+          <p class="cf-alert cf-alert-info">This time has passed, so it can't be approved. Reschedule or reject the request.</p>
+        }
+
+        @if (mode === 'reschedule') {
+          <app-reschedule-picker [appointment]="a" confirmLabel="Move and approve"
+                                 (saved)="rescheduled()" (cancelled)="setMode('view')" />
+        } @else if (mode !== 'view') {
           <label class="cf-field">
             <span>
               @switch (mode) {
@@ -62,6 +72,7 @@
                 @case ('reject') { Reason for rejecting (required — shown to the patient) }
                 @case ('cancel') { Reason for cancelling (shown to the patient) }
                 @case ('complete') { Doctor's notes / visit summary (optional — shown to the patient) }
+                @case ('noshow') { Note for the patient (optional) }
               }
             </span>
             <textarea rows="3" [(ngModel)]="text"
@@ -71,28 +82,37 @@
         }
       </div>
 
-      <footer class="cf-modal-footer">
-        @if (mode === 'view') {
-          @if (a.status === 'Pending') {
-            <button type="button" class="btn-secondary cf-left" (click)="setMode('reject')">Reject</button>
-            <button type="button" class="btn-primary" (click)="setMode('approve')">Approve</button>
-          } @else if (a.status === 'Approved') {
-            <button type="button" class="btn-secondary cf-left" (click)="setMode('cancel')">Cancel appointment</button>
-            <button type="button" class="btn-primary" (click)="setMode('complete')">Mark as completed</button>
-          }
-          <button type="button" class="btn-secondary" (click)="close()">Close</button>
-        } @else {
-          <button type="button" class="btn-secondary" (click)="setMode('view')">Back</button>
-          <button type="button" [class]="mode === 'reject' || mode === 'cancel' ? 'btn-danger' : 'btn-primary'" (click)="confirm()">
-            @switch (mode) {
-              @case ('approve') { Confirm approval }
-              @case ('reject') { Reject request }
-              @case ('cancel') { Cancel appointment }
-              @case ('complete') { Mark as completed }
+      @if (mode !== 'reschedule') {
+        <footer class="cf-modal-footer">
+          @if (mode === 'view') {
+            @if (a.status === 'Pending') {
+              <button type="button" class="btn-secondary cf-left" (click)="setMode('reject')">Reject</button>
+              <button type="button" class="btn-secondary" (click)="setMode('reschedule')">Reschedule</button>
+              <button type="button" class="btn-primary" [disabled]="started()" (click)="setMode('approve')">Approve</button>
+            } @else if (a.status === 'Approved') {
+              <button type="button" class="btn-secondary cf-left" (click)="setMode('cancel')">Cancel appointment</button>
+              <button type="button" class="btn-secondary" (click)="setMode('reschedule')">Reschedule</button>
+              @if (started()) {
+                <button type="button" class="btn-secondary" (click)="setMode('noshow')">No-show</button>
+                <button type="button" class="btn-primary" (click)="setMode('complete')">Mark as completed</button>
+              }
             }
-          </button>
-        }
-      </footer>
+            <button type="button" class="btn-secondary" (click)="close()">Close</button>
+          } @else {
+            <button type="button" class="btn-secondary" (click)="setMode('view')">Back</button>
+            <button type="button" [class]="mode === 'reject' || mode === 'cancel' ? 'btn-danger' : 'btn-primary'"
+                    (click)="confirm()" [disabled]="busy" [class.is-busy]="busy">
+              @switch (mode) {
+                @case ('approve') { Confirm approval }
+                @case ('reject') { Reject request }
+                @case ('cancel') { Cancel appointment }
+                @case ('complete') { Mark as completed }
+                @case ('noshow') { Mark as no-show }
+              }
+            </button>
+          }
+        </footer>
+      }
 
     </div>
   </div>

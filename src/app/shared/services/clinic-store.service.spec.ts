@@ -1,147 +1,144 @@
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
+import { authInterceptor } from '../../auth/auth.interceptor';
+import { AuthService, UserRole } from '../../auth/auth.service';
+import { addDays, todayISO } from '../utils/time';
 import { ClinicStore } from './clinic-store.service';
-import { AuthService } from '../../auth/auth.service';
-import { addDays, addWeekdays, todayISO } from '../utils/time';
+
+const tomorrow = addDays(todayISO(), 1);
+
+let http: HttpTestingController;
+
+function setUp(): void {
+  localStorage.clear();
+  sessionStorage.clear();
+  TestBed.configureTestingModule({
+    providers: [
+      provideHttpClient(withInterceptors([authInterceptor])),
+      provideHttpClientTesting(),
+      provideRouter([{ path: 'login', children: [] }])
+    ]
+  });
+  http = TestBed.inject(HttpTestingController);
+}
+
+async function signIn(role: UserRole): Promise<AuthService> {
+  const auth = TestBed.inject(AuthService);
+  const login = auth.login('someone@clinic.test', 'Secret123');
+  http.expectOne('/api/auth/login').flush({
+    token: 'test-token', role, userId: role === 'admin' ? 'admin' : 'CF-1001',
+    expiresAt: new Date(Date.now() + 3_600_000).toISOString()
+  });
+  await login;
+  return auth;
+}
+
+/** Answers every request a patient's load makes. */
+function flushPatientData(busy: { doctorId: string; date: string; time: string }[] = []): void {
+  http.expectOne('/api/clinic').flush({ name: 'Test Clinic', phone: '' });
+  http.expectOne('/api/doctors').flush([{ id: 'dr-a', name: 'Dr. A', specialty: 'General', status: 'Active' }]);
+  http.expectOne('/api/patients/me').flush({ id: 'CF-1001', fullName: 'Ana Cruz' });
+  http.expectOne('/api/appointments').flush([]);
+  http.expectOne(r => r.url === '/api/availability').flush({
+    blocks: [{ id: 1, doctorId: 'dr-a', date: tomorrow, start: '09:00', end: '10:00', slotMinutes: 30 }],
+    busy
+  });
+  http.expectOne('/api/notifications').flush([]);
+}
 
 describe('ClinicStore', () => {
-  let store: ClinicStore;
+  beforeEach(setUp);
+  afterEach(() => TestBed.resetTestingModule());
 
-  beforeEach(() => {
-    localStorage.clear();
-    sessionStorage.clear();
-    TestBed.configureTestingModule({});
-    store = TestBed.inject(ClinicStore);
+  it('starts empty: there is no built-in data', () => {
+    const store = TestBed.inject(ClinicStore);
+    expect(store.doctors()).toEqual([]);
+    expect(store.patients()).toEqual([]);
+    expect(store.appointments()).toEqual([]);
   });
 
-  /** First free slot for a doctor, as { date, time }. */
-  function freeSlot(doctorId = 'amelia-brooks') {
-    const date = store.availableDates(doctorId, 1)[0];
-    const time = store.slotsFor(doctorId, date).find(s => s.available)!.time;
-    return { date, time };
-  }
+  it('loads a patient\'s data with the token and marks taken slots as booked', async () => {
+    await signIn('patient');
+    const store = TestBed.inject(ClinicStore);
 
-  function request(patientId = 'CF-1024', doctorId = 'amelia-brooks') {
-    const { date, time } = freeSlot(doctorId);
-    return {
-      date, time,
-      result: store.requestAppointment({
-        patientId, doctorId, date, time, type: 'General consultation', reason: 'Check-up', firstVisit: false
-      })
-    };
-  }
-
-  it('seeds doctors, patients and open slots', () => {
-    expect(store.doctors().length).toBeGreaterThan(0);
-    expect(store.patient('CF-1024')?.fullName).toBe('Emma Wilson');
-    expect(store.availableDates('amelia-brooks').length).toBeGreaterThan(0);
-  });
-
-  it('creates a pending request and blocks double-booking of the same slot', () => {
-    const { date, time, result } = request();
-    expect(result.ok).toBe(true);
-    const appt = store.appointments().find(a => a.id === (result as { id: string }).id)!;
-    expect(appt.status).toBe('Pending');
-    expect(store.slotsFor('amelia-brooks', date).find(s => s.time === time)!.available).toBe(false);
-
-    const second = store.requestAppointment({
-      patientId: 'CF-1025', doctorId: 'amelia-brooks', date, time, type: 'General consultation', reason: 'x', firstVisit: false
+    const loading = store.ensureLoaded();
+    const doctors = http.match('/api/doctors');
+    expect(doctors[0].request.headers.get('Authorization')).toBe('Bearer test-token');
+    doctors[0].flush([{ id: 'dr-a', name: 'Dr. A', specialty: 'General', status: 'Active' }]);
+    http.expectOne('/api/clinic').flush({ name: 'Test Clinic', phone: '' });
+    http.expectOne('/api/patients/me').flush({ id: 'CF-1001', fullName: 'Ana Cruz' });
+    http.expectOne('/api/appointments').flush([]);
+    http.expectOne(r => r.url === '/api/availability').flush({
+      blocks: [{ id: 1, doctorId: 'dr-a', date: tomorrow, start: '09:00', end: '10:00', slotMinutes: 30 }],
+      busy: [{ doctorId: 'dr-a', date: tomorrow, time: '09:00' }]
     });
-    expect(second.ok).toBe(false);
+    http.expectOne('/api/notifications').flush([]);
+    await loading;
+
+    expect(store.patients().map(p => p.id)).toEqual(['CF-1001']);
+    expect(store.slotsFor('dr-a', tomorrow).map(s => [s.time, s.available])).toEqual([['09:00', false], ['09:30', true]]);
+    expect(store.availableDates('dr-a')).toEqual([tomorrow]);
+    http.verify();
   });
 
-  it('approving notifies the patient', () => {
-    const { result } = request();
-    const id = (result as { id: string }).id;
-    expect(store.approve(id).ok).toBe(true);
-    expect(store.appointments().find(a => a.id === id)!.status).toBe('Approved');
-    expect(store.notifications().some(n => n.patientId === 'CF-1024' && n.type === 'APPROVAL' &&
-      n.action.kind === 'view-appointment' && n.action.appointmentId === id)).toBe(true);
+  it('returns the server\'s message when a change is refused, then reloads', async () => {
+    await signIn('patient');
+    const store = TestBed.inject(ClinicStore);
+
+    const booking = store.requestAppointment({
+      doctorId: 'dr-a', date: tomorrow, time: '09:00', type: 'General consultation', reason: 'Check-up', firstVisit: false
+    });
+    http.expectOne('/api/appointments').flush(
+      { error: 'This time is no longer available.' }, { status: 409, statusText: 'Conflict' });
+    await Promise.resolve();
+    await new Promise(resolve => setTimeout(resolve));
+    flushPatientData();
+
+    expect(await booking).toEqual({ ok: false, error: 'This time is no longer available.' });
   });
 
-  it('rejecting requires a reason', () => {
-    const { result } = request();
-    const id = (result as { id: string }).id;
-    expect(store.reject(id, '  ').ok).toBe(false);
-    expect(store.reject(id, 'Doctor unavailable').ok).toBe(true);
-    expect(store.appointments().find(a => a.id === id)!.status).toBe('Rejected');
-  });
+  it('reports a load failure instead of showing stale data', async () => {
+    await signIn('patient');
+    const store = TestBed.inject(ClinicStore);
 
-  it('cancelling frees the slot again', () => {
-    const { date, time, result } = request();
-    const id = (result as { id: string }).id;
-    expect(store.cancel(id, 'patient', 'Conflict').ok).toBe(true);
-    expect(store.slotsFor('amelia-brooks', date).find(s => s.time === time)!.available).toBe(true);
-  });
+    const loading = store.ensureLoaded();
+    http.expectOne('/api/doctors').error(new ProgressEvent('error'));
+    await loading;
 
-  it('only approved appointments can be completed', () => {
-    const { result } = request();
-    const id = (result as { id: string }).id;
-    expect(store.complete(id, 'notes').ok).toBe(false);
-    store.approve(id);
-    expect(store.complete(id, 'All good').ok).toBe(true);
-    expect(store.appointments().find(a => a.id === id)!.visitSummary).toBe('All good');
-  });
-
-  it('does not book doctors on leave', () => {
-    expect(store.availableDates('grace-lewis').length).toBe(0);
-  });
-
-  it('registers patients with unique emails', () => {
-    expect(store.registerPatient({ fullName: 'New Person', email: 'new@example.com', password: 'Secret123' }).ok).toBe(true);
-    expect(store.registerPatient({ fullName: 'Dup', email: 'NEW@example.com', password: 'Secret123' }).ok).toBe(false);
-    expect(store.registerPatient({ fullName: 'Dup', email: 'emma.wilson@example.com', password: 'Secret123' }).ok).toBe(false);
-  });
-
-  it('skips overlapping availability and refuses to remove booked blocks', () => {
-    const date = addWeekdays(addDays(todayISO(), 1), 0);
-    const overlap = store.addAvailability({ doctorId: 'amelia-brooks', date, start: '10:00', end: '11:00', slotMinutes: 30, repeatWeeks: 0 });
-    expect(overlap.ok).toBe(false);
-
-    const { date: bookedDate, result } = request();
-    expect(result.ok).toBe(true);
-    const block = store.schedules().find(b => b.doctorId === 'amelia-brooks' && b.date === bookedDate &&
-      store.slotsFor('amelia-brooks', bookedDate).some(s => s.booked))!;
-    expect(store.removeAvailability(block.id).ok).toBe(false);
-  });
-
-  it('persists to localStorage', () => {
-    request();
-    TestBed.flushEffects();
-    const saved = JSON.parse(localStorage.getItem('clinicflow.db.v1')!);
-    expect(saved.appointments.length).toBe(store.appointments().length);
+    expect(store.loadError()).toContain("Can't reach");
+    expect(store.doctors()).toEqual([]);
   });
 });
 
 describe('AuthService', () => {
-  let auth: AuthService;
-  let store: ClinicStore;
+  beforeEach(setUp);
+  afterEach(() => TestBed.resetTestingModule());
 
-  beforeEach(() => {
-    localStorage.clear();
-    sessionStorage.clear();
-    TestBed.configureTestingModule({});
-    auth = TestBed.inject(AuthService);
-    store = TestBed.inject(ClinicStore);
-  });
-
-  it('logs in the admin with the right password only', () => {
-    expect(auth.login('admin@clinicflow.com', 'wrong')).toEqual({ error: 'Incorrect email or password.' });
-    expect(auth.login('ADMIN@clinicflow.com', 'Admin@123')).toEqual({ role: 'admin' });
+  it('keeps the session after a successful login and clears it on logout', async () => {
+    const auth = await signIn('admin');
     expect(auth.role).toBe('admin');
+    expect(auth.token).toBe('test-token');
+    auth.logout();
+    expect(auth.role).toBeNull();
+    expect(sessionStorage.length).toBe(0);
   });
 
-  it('logs in patients and exposes their ID', () => {
-    expect(auth.login('emma.wilson@example.com', 'Patient@123')).toEqual({ role: 'patient' });
-    expect(auth.patientId()).toBe('CF-1024');
+  it('returns the server\'s message for a wrong password', async () => {
+    const auth = TestBed.inject(AuthService);
+    const login = auth.login('a@b.test', 'nope');
+    http.expectOne('/api/auth/login').flush(
+      { error: 'Incorrect email or password.' }, { status: 401, statusText: 'Unauthorized' });
+    expect(await login).toEqual({ error: 'Incorrect email or password.' });
+    expect(auth.role).toBeNull();
   });
 
-  it('blocks inactive patients and unknown emails', () => {
-    expect('error' in auth.login('lucas.t@example.com', 'Patient@123')).toBe(true);
-    expect('error' in auth.login('nobody@example.com', 'Patient@123')).toBe(true);
-  });
-
-  it('lets newly registered patients log in', () => {
-    store.registerPatient({ fullName: 'Ana Cruz', email: 'ana@example.com', password: 'Secret123' });
-    expect(auth.login('ana@example.com', 'Secret123')).toEqual({ role: 'patient' });
+  it('signs out when the server rejects the token', async () => {
+    const auth = await signIn('patient');
+    const loading = TestBed.inject(ClinicStore).ensureLoaded();
+    http.expectOne('/api/doctors').flush(null, { status: 401, statusText: 'Unauthorized' });
+    await loading;
+    expect(auth.role).toBeNull();
   });
 });

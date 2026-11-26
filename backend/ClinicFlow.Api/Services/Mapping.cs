@@ -16,6 +16,8 @@ public static class Mapping
         return int.TryParse(raw, out id);
     }
 
+    public static string AppointmentStatusText(AppointmentStatus s) => s == AppointmentStatus.NoShow ? "No-show" : s.ToString();
+
     public static string DoctorStatusText(DoctorStatus s) => s == DoctorStatus.OnLeave ? "On leave" : "Active";
     public static DoctorStatus ParseDoctorStatus(string s) => s == "On leave" ? DoctorStatus.OnLeave : DoctorStatus.Active;
 
@@ -29,7 +31,7 @@ public static class Mapping
     public static AppointmentDto ToDto(this Appointment a) => new(
         AppointmentRef(a.Id), a.PatientId, a.Patient?.FullName ?? "", a.DoctorId, a.Doctor?.Name ?? "", a.Doctor?.Specialty ?? "",
         $"ClinicFlow · {a.Doctor?.Location}", a.Date.Iso(), a.Time.Hhmm(), a.Time.To12h(), a.Time.AddMinutes(a.Duration).To12h(),
-        a.Duration, a.Type, a.Reason, a.Notes, a.FirstVisit, a.Status.ToString(), a.RequestedOn, a.ClinicNote, a.VisitSummary,
+        a.Duration, a.Type, a.Reason, a.Notes, a.FirstVisit, AppointmentStatusText(a.Status), a.RequestedOn, a.ClinicNote, a.VisitSummary,
         a.History.OrderBy(h => h.At).Select(h => new StatusEventDto(h.Label, h.At)).ToList());
 
     public static ScheduleBlockDto ToDto(this ScheduleBlock b) => new(b.Id, b.DoctorId, b.Date.Iso(), b.Start.Hhmm(), b.End.Hhmm(), b.SlotMinutes);

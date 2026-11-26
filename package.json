@@ -4,6 +4,7 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
+    "cert": "dotnet dev-certs https --export-path .cert/localhost.pem --format Pem --no-password",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"

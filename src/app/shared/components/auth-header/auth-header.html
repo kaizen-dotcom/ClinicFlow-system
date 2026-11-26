@@ -6,11 +6,11 @@
     </span>
   </div>
 
-  <div class="header-help">
-    <span>Need help?</span>
-    <a href="mailto:support@clinicflow.com">
-      Contact the clinic
-    </a>
-  </div>
+  @if (clinic.clinicInfo().phone; as phone) {
+    <div class="header-help">
+      <span>Need help?</span>
+      <a [href]="'tel:' + phone">Call {{ phone }}</a>
+    </div>
+  }
 
 </header>

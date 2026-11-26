@@ -1,5 +1,8 @@
 <header class="navbar">
   <div class="nav-left">
+    <button type="button" class="menu-button" aria-label="Open menu" [attr.aria-expanded]="menu.open()" (click)="menu.toggle()">
+      <svg [lucideIcon]="MenuIcon" size="22"></svg>
+    </button>
     <span class="clinic-name">{{ clinic.admin().clinicName }}</span>
   </div>
 

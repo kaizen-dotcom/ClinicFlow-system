@@ -7,13 +7,14 @@
 <!-- Tabs & Book Button -->
 <div class="tabs-bar">
   <div class="tabs">
-    <div class="tab" 
-         *ngFor="let tab of tabs()" 
-         [class.active]="activeTab === tab.value"
-         (click)="setTab(tab.value)">
+    <button type="button" class="tab"
+            *ngFor="let tab of tabs()"
+            [class.active]="activeTab === tab.value"
+            [attr.aria-pressed]="activeTab === tab.value"
+            (click)="setTab(tab.value)">
       {{ tab.label }}
       <span class="tab-count" *ngIf="tab.count">{{ tab.count }}</span>
-    </div>
+    </button>
   </div>
   <button class="btn-primary" (click)="booking.open()">Book appointment</button>
 </div>
@@ -52,10 +53,13 @@
         </td>
         <td>
           <button type="button" class="action-link" (click)="store.view(appt.id)">
-            {{ store.isUpcoming(appt) ? 'View / cancel' : 'View details' }}
+            {{ store.isUpcoming(appt) ? 'View / change' : 'View details' }}
             <svg [lucideIcon]="ArrowRightIcon" size="16" class="arrow-icon" aria-hidden="true"></svg>
           </button>
         </td>
+      </tr>
+      <tr *ngIf="!visible().length">
+        <td colspan="5" class="cf-empty">No appointments here yet. Use “Book appointment” to request a visit.</td>
       </tr>
     </tbody>
   </table>
@@ -69,5 +73,5 @@
 <!-- Bottom Info Banner -->
 <div class="info-banner">
   <h3>A clear view of your care</h3>
-  <p>Pending: awaiting clinic review. Approved: your visit is confirmed. Completed: your visit has finished. Rejected or Cancelled: this appointment will not take place. Choose another available time to rebook.</p>
+  <p>Pending: awaiting clinic review. Approved: your visit is confirmed. Completed: your visit has finished. Rejected, Cancelled or Expired: this appointment will not take place. No-show: the visit was missed. Choose another available time to rebook.</p>
 </div>

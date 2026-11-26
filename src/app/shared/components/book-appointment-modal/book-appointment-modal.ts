@@ -1,4 +1,5 @@
-import { Component, HostListener, effect, inject, untracked } from '@angular/core';
+import { ToastService } from '../../services/toast.service';
+import { ChangeDetectorRef, Component, HostListener, effect, inject, untracked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -18,6 +19,8 @@ export class BookAppointmentModal {
   readonly modal = inject(BookingModalService);
   readonly clinic = inject(ClinicStore);
   private readonly mine = inject(PatientAppointmentsService);
+  private readonly toast = inject(ToastService);
+  private readonly cdr = inject(ChangeDetectorRef);
   private readonly router = inject(Router);
 
   readonly appointmentTypes = APPOINTMENT_TYPES;
@@ -29,6 +32,9 @@ export class BookAppointmentModal {
   sent = false;
   error = '';
   createdId = '';
+  busy = false;
+  /** Kept so the confirmation can still show the time once it is no longer free. */
+  bookedLabel = '';
 
   constructor() {
     // Reset the form each time the modal opens, applying any preselected doctor/date/time.
@@ -74,29 +80,29 @@ export class BookAppointmentModal {
     if (slot.available) this.form.time = slot.time;
   }
 
-  submit(ngForm: NgForm): void {
+  async submit(ngForm: NgForm): Promise<void> {
     this.submitted = true;
     this.error = '';
-    if (ngForm.invalid || !this.form.doctorId || !this.form.date || !this.form.time) return;
+    if (this.busy || ngForm.invalid || !this.form.doctorId || !this.form.date || !this.form.time) return;
+    this.busy = true;
+    const { doctorId, date, time, type, reason, notes, firstVisit } = this.form;
+    this.bookedLabel = this.slot?.label ?? '';
 
-    // Keep the patient's contact details up to date.
-    const contact = this.clinic.updatePatient(this.patientId, {
+    // Keep the patient's contact details up to date, then send the request.
+    let result = await this.mine.updateContact({
       fullName: this.form.fullName.trim(), dob: this.form.dob, gender: this.form.gender,
       phone: this.form.phone.trim(), email: this.form.email
     });
-    if (!contact.ok) { this.error = contact.error; return; }
-
-    const result = this.clinic.requestAppointment({
-      patientId: this.patientId, doctorId: this.form.doctorId, date: this.form.date, time: this.form.time,
-      type: this.form.type, reason: this.form.reason, notes: this.form.notes, firstVisit: this.form.firstVisit
-    });
-    if (!result.ok) {
-      this.error = result.error;
-      this.loadSlots(); // the slot may have just been taken
-      return;
+    if (result.ok) {
+      result = await this.clinic.requestAppointment({ doctorId, date, time, type, reason, notes, firstVisit });
+      if (!result.ok) this.loadSlots(); // the slot may have just been taken
     }
+    this.busy = false;
+    this.cdr.markForCheck();
+    if (!result.ok) { this.error = result.error; return; }
     this.createdId = result.id ?? '';
     this.sent = true;
+    this.toast.success('Appointment request sent.');
   }
 
   close(): void {

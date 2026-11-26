@@ -54,6 +54,7 @@
   </div>
   
   <div class="activity-list">
+    <p class="cf-empty" *ngIf="!recentActivity().length">No appointments yet.</p>
     <div class="activity-item clickable" *ngFor="let act of recentActivity()" role="button" tabindex="0"
          (click)="store.view(act.id)" (keydown.enter)="store.view(act.id)">
       <div class="activity-main">

@@ -7,7 +7,8 @@ import { downloadCsv } from '../../shared/utils/csv';
 import { todayISO } from '../../shared/utils/time';
 
 const STATUS_COLORS: Record<string, string> = {
-  Completed: '#138A4B', Approved: '#3B82F6', Pending: '#F59E0B', Cancelled: '#64748B', Rejected: '#EF4444'
+  Completed: '#138A4B', Approved: '#3B82F6', Pending: '#F59E0B', Cancelled: '#64748B', Rejected: '#EF4444',
+  'No-show': '#8B5CF6', Expired: '#A8A29E'
 };
 
 @Component({

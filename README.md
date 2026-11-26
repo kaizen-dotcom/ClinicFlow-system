@@ -13,13 +13,19 @@ This project was generated using [Angular CLI](https://github.com/angular/angula
 
 ## Development server
 
-To start a local development server, run:
+The app needs the API and its MySQL database. Set them up once as described in [backend/README.md](backend/README.md), then run both:
 
 ```bash
-ng serve
+dotnet dev-certs https --trust   # once per computer
+npm run cert                     # once: copies that certificate to .cert/ for the app
+
+dotnet run --project backend/ClinicFlow.Api --launch-profile https  # API on https://localhost:7043
+npm start                                                           # app on https://localhost:4200
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+The dev server forwards `/api` requests to the API (see `proxy.conf.json`). A production deployment must serve the API under `/api` on the same address as the app.
+
+Once the server is running, open your browser and navigate to `https://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
 
 ## Code scaffolding
 

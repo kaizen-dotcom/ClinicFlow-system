@@ -13,6 +13,15 @@
 
       <div class="modal-body">
 
+        @if (done) { <p class="cf-alert cf-alert-success" role="status">{{ done }}</p> }
+        @if (rescheduling) {
+          <app-reschedule-picker [appointment]="a" confirmLabel="Request new time"
+                                 (saved)="rescheduled()" (cancelled)="rescheduling = false" />
+        }
+        @if (!rescheduling && store.isUpcoming(a) && !canChange(a)) {
+          <p class="cf-alert cf-alert-info">This visit time has passed. Contact the clinic if you need to change it.</p>
+        }
+
         <!-- Status message -->
         @if (a.clinicNote) {
           <div class="note" [ngClass]="'note-' + a.status.toLowerCase()">{{ a.clinicNote }}</div>
@@ -23,9 +32,9 @@
           <h3>Appointment</h3>
           <dl>
             <div><dt>Date</dt><dd>{{ a.date | date: 'EEEE, d MMMM y' }}</dd></div>
-            <div><dt>Time</dt><dd>{{ a.start }}–{{ a.end }} · 30 min</dd></div>
+            <div><dt>Time</dt><dd>{{ a.start }}–{{ a.end }} · {{ a.duration }} min</dd></div>
             <div><dt>Doctor</dt><dd>{{ a.doctor }}<small>{{ a.specialty }}</small></dd></div>
-            <div><dt>Location</dt><dd>{{ a.location }}<small>120 Wellness Avenue</small></dd></div>
+            <div><dt>Location</dt><dd>{{ a.location }}<small>{{ clinic.clinicInfo().name }}</small></dd></div>
             <div><dt>Appointment type</dt><dd>{{ a.type }}</dd></div>
             <div><dt>Visit</dt><dd>{{ a.firstVisit ? 'First visit with this doctor' : 'Returning patient' }}</dd></div>
             <div><dt>Requested on</dt><dd>{{ a.requestedOn | date: 'd MMM y · h:mm a' }}</dd></div>
@@ -38,8 +47,8 @@
           <dl>
             <div><dt>Name</dt><dd>{{ store.patient.fullName }}</dd></div>
             <div><dt>Patient ID</dt><dd>{{ store.patient.id }}</dd></div>
-            <div><dt>Date of birth</dt><dd>{{ store.patient.dob | date: 'd MMM y' }}</dd></div>
-            <div><dt>Gender</dt><dd>{{ store.patient.gender }}</dd></div>
+            <div><dt>Date of birth</dt><dd>{{ store.patient.dob ? (store.patient.dob | date: 'd MMM y') : '—' }}</dd></div>
+            <div><dt>Gender</dt><dd>{{ store.patient.gender || '—' }}</dd></div>
             <div><dt>Phone</dt><dd>{{ store.patient.phone }}</dd></div>
             <div><dt>Email</dt><dd>{{ store.patient.email }}</dd></div>
           </dl>
@@ -73,18 +82,21 @@
             <label for="cancel-reason">Reason for cancelling (optional)</label>
             <textarea id="cancel-reason" rows="2" [(ngModel)]="cancelReason" placeholder="e.g. Schedule conflict"></textarea>
             <p>Your time slot will be released to other patients.</p>
+            @if (error) { <p role="alert" class="cf-error">{{ error }}</p> }
           </div>
         }
       </div>
 
+      @if (!rescheduling) {
       <footer class="modal-footer">
         @if (confirmingCancel) {
           <button type="button" class="btn-secondary" (click)="confirmingCancel = false">Keep appointment</button>
-          <button type="button" class="btn-danger" (click)="confirmCancel(a)">Yes, cancel appointment</button>
+          <button type="button" class="btn-danger" (click)="confirmCancel(a)" [disabled]="busy" [class.is-busy]="busy">Yes, cancel appointment</button>
         } @else {
-          @if (canCancel(a)) {
+          @if (canChange(a)) {
             <button type="button" class="btn-danger-outline" (click)="confirmingCancel = true">Cancel appointment</button>
-          } @else {
+            <button type="button" class="btn-secondary" (click)="rescheduling = true; done = ''">Reschedule</button>
+          } @else if (!store.isUpcoming(a)) {
             <button type="button" class="btn-secondary" (click)="bookAgain(a)">
               {{ a.status === 'Completed' ? 'Book follow-up' : 'Book again' }}
             </button>
@@ -92,6 +104,7 @@
           <button type="button" class="btn-primary" (click)="close()">Close</button>
         }
       </footer>
+      }
 
     </div>
   </div>

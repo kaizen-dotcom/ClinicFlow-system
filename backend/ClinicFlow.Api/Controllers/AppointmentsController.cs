@@ -22,7 +22,7 @@ public class AppointmentsController(ClinicService clinic) : ApiControllerBase
         var me = User.UserId();
         if (!User.IsAdmin()) q = q.Where(a => a.PatientId == me);
         else if (!string.IsNullOrEmpty(patientId)) q = q.Where(a => a.PatientId == patientId);
-        if (Enum.TryParse<AppointmentStatus>(status, true, out var s)) q = q.Where(a => a.Status == s);
+        if (Enum.TryParse<AppointmentStatus>(status?.Replace("-", ""), true, out var s)) q = q.Where(a => a.Status == s);
         if (!string.IsNullOrEmpty(doctorId)) q = q.Where(a => a.DoctorId == doctorId);
         var list = await q.OrderBy(a => a.Date).ThenBy(a => a.Time).ToListAsync(ct);
         return list.Select(a => a.ToDto()).ToList();
@@ -63,6 +63,19 @@ public class AppointmentsController(ClinicService clinic) : ApiControllerBase
     [Authorize(Roles = Roles.Admin)]
     public Task<ActionResult<AppointmentDto>> Complete(string id, NoteRequest req, CancellationToken ct) =>
         Run(id, n => clinic.CompleteAsync(n, req.Text, ct), ct);
+
+    [HttpPost("{id}/no-show")]
+    [Authorize(Roles = Roles.Admin)]
+    public Task<ActionResult<AppointmentDto>> NoShow(string id, NoteRequest req, CancellationToken ct) =>
+        Run(id, n => clinic.MarkNoShowAsync(n, req.Text, ct), ct);
+
+    /// <summary>Patients can move their own appointments (back to Pending); admins can move any.</summary>
+    [HttpPost("{id}/reschedule")]
+    public async Task<ActionResult<AppointmentDto>> Reschedule(string id, RescheduleRequest req, CancellationToken ct)
+    {
+        if (await Find(id, ct) is null) return Error("Appointment not found.", 404);
+        return await Run(id, n => clinic.RescheduleAsync(n, req, User.IsAdmin(), ct), ct);
+    }
 
     /// <summary>Patients can cancel their own appointments; admins can cancel any.</summary>
     [HttpPost("{id}/cancel")]

@@ -1,4 +1,5 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { ToastService } from '../../shared/services/toast.service';
+import { ChangeDetectorRef, Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
@@ -19,13 +20,16 @@ const PAGE_SIZE = 10;
 export class AppointmentsComponent {
   readonly ui = inject(AdminUiService);
   readonly clinic = inject(ClinicStore);
+  private readonly toast = inject(ToastService);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   readonly status = signal<AppointmentStatus | 'All'>('All');
   readonly search = signal('');
   readonly doctorId = signal('');
   readonly month = signal('');   // "YYYY-MM" or ''
   readonly page = signal(1);
-  message = '';
+  /** Appointment being approved, to show progress on its button. */
+  approving = '';
 
   constructor() {
     const s = inject(ActivatedRoute).snapshot.queryParamMap.get('status') as AppointmentStatus | null;
@@ -96,9 +100,14 @@ export class AppointmentsComponent {
     this.page.set(1);
   }
 
-  approve(a: AppointmentView) {
-    const r = this.clinic.approve(a.id);
-    this.message = r.ok ? `${a.id} approved. ${a.patient} has been notified.` : r.error;
+  async approve(a: AppointmentView) {
+    if (this.approving) return;
+    this.approving = a.id;
+    const r = await this.clinic.approve(a.id);
+    this.approving = '';
+    if (r.ok) this.toast.success(`${a.id} approved. ${a.patient} has been notified.`);
+    else this.toast.error(r.error);
+    this.cdr.markForCheck();
   }
 
   exportCsv() {

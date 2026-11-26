@@ -6,6 +6,10 @@
   </div>
 </div>
 
+@if (!clinic.doctors().length) {
+  <p class="cf-alert cf-alert-info sched-note">Add a doctor on the Doctors page first, then set their working hours here.</p>
+}
+
 <!-- Top Toolbar -->
 <div class="toolbar-container">
   <div class="toolbar-left">
@@ -149,9 +153,8 @@
 
       <p class="form-note">{{ slotPreview }} appointment slot{{ slotPreview === 1 ? '' : 's' }} will be created.</p>
       @if (formError) { <p class="cf-alert cf-alert-error" role="alert">{{ formError }}</p> }
-      @if (message) { <p class="cf-alert cf-alert-success" role="status">{{ message }}</p> }
 
-      <button type="submit" class="btn-primary btn-full">Create schedule</button>
+      <button type="submit" class="btn-primary btn-full" [disabled]="saving || !clinic.doctors().length" [class.is-busy]="saving">Create schedule</button>
 
       <p class="form-footer-note">Overlapping days are skipped. Existing appointments stay unchanged.</p>
     </form>

@@ -1,10 +1,16 @@
-<div class="patient-container">
+<div class="patient-container" [class.menu-open]="menu.open()" (keydown.escape)="menu.close()">
   <app-patient-sidebar></app-patient-sidebar>
+  @if (menu.open()) { <div class="menu-backdrop" (click)="menu.close()"></div> }
 
   <div class="main-content">
     <app-patient-navbar></app-patient-navbar>
 
     <main class="page-content">
+      @if (clinic.loadError()) {
+        <p class="cf-alert cf-alert-error" role="alert">
+          {{ clinic.loadError() }} <button type="button" class="btn-secondary" (click)="clinic.refresh()">Retry</button>
+        </p>
+      }
       <router-outlet></router-outlet>
     </main>
   </div>

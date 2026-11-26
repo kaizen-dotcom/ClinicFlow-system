@@ -11,6 +11,6 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<ClinicDbCo
 {
     public ClinicDbContext CreateDbContext(string[] args) =>
         new(new DbContextOptionsBuilder<ClinicDbContext>()
-            .UseMySQL("server=localhost;database=clinicflow;user=design-time;password=unused")
+            .UseMySQL("server=localhost;database=clinicflow_db;user=design-time;password=unused")
             .Options);
 }

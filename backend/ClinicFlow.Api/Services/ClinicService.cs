@@ -22,6 +22,15 @@ public class ClinicService(ClinicDbContext db, TimeProvider clock, IPasswordHash
     public const string DefaultApprovedNote = "Please arrive 15 minutes before your appointment and bring a valid ID and your current medication list.";
     public const string PendingNote = "Your request is awaiting clinic review. You will be notified once it is approved.";
 
+    /// <summary>Most requests a patient can have waiting for review at one time.</summary>
+    public const int MaxPendingRequests = 3;
+
+    /// <summary>
+    /// Bookings are checked and saved one at a time, so two simultaneous requests can't both pass the
+    /// per-patient rules (single API instance; the slot itself is also protected by a unique index).
+    /// </summary>
+    private static readonly SemaphoreSlim BookingLock = new(1, 1);
+
     private DateTime Now => clock.GetLocalNow().DateTime;
     private DateOnly Today => DateOnly.FromDateTime(Now);
 
@@ -99,8 +108,44 @@ public class ClinicService(ClinicDbContext db, TimeProvider clock, IPasswordHash
     public IQueryable<Appointment> AppointmentsQuery() =>
         db.Appointments.AsNoTracking().Include(a => a.Patient).Include(a => a.Doctor).Include(a => a.History);
 
+    /// <summary>True once the visit's start time has arrived.</summary>
+    private bool HasStarted(Appointment a) => a.Date.ToDateTime(a.Time) <= Now;
+
+    /// <summary>
+    /// Rules that depend on the patient's other appointments: no two visits at the same time, and a limit on
+    /// requests waiting for review (not applied to staff bookings). Returns an error message, or null.
+    /// </summary>
+    private async Task<string?> CheckPatientRulesAsync(string patientId, DateOnly date, TimeOnly time, int duration,
+        bool byStaff, int? ignoreId, CancellationToken ct)
+    {
+        var active = await db.Appointments.AsNoTracking()
+            .Where(a => a.PatientId == patientId && a.Id != (ignoreId ?? 0) &&
+                        (a.Status == AppointmentStatus.Pending || a.Status == AppointmentStatus.Approved))
+            .ToListAsync(ct);
+        var start = date.ToDateTime(time);
+        var end = start.AddMinutes(duration);
+        if (active.Any(a => a.Date.ToDateTime(a.Time) < end && start < a.Date.ToDateTime(a.Time).AddMinutes(a.Duration)))
+            return byStaff ? "This patient already has an appointment at that time." : "You already have an appointment at that time.";
+        if (!byStaff && active.Count(a => a.Status == AppointmentStatus.Pending) >= MaxPendingRequests)
+            return $"You already have {MaxPendingRequests} requests waiting for review. Wait for the clinic's reply or cancel one first.";
+        return null;
+    }
+
     /// <summary>Creates a booking. Patients' requests start Pending; staff bookings are Approved.</summary>
     public async Task<ServiceResult<Appointment>> CreateAppointmentAsync(string patientId, CreateAppointmentRequest req, bool byStaff, CancellationToken ct = default)
+    {
+        await BookingLock.WaitAsync(ct);
+        try
+        {
+            return await CreateLockedAsync(patientId, req, byStaff, ct);
+        }
+        finally
+        {
+            BookingLock.Release();
+        }
+    }
+
+    private async Task<ServiceResult<Appointment>> CreateLockedAsync(string patientId, CreateAppointmentRequest req, bool byStaff, CancellationToken ct)
     {
         if (!Mapping.TryParseDate(req.Date, out var date) || !Mapping.TryParseTime(req.Time, out var time))
             return ServiceResult<Appointment>.Fail("Invalid date or time.");
@@ -112,12 +157,16 @@ public class ClinicService(ClinicDbContext db, TimeProvider clock, IPasswordHash
         if (slot is null) return ServiceResult<Appointment>.Fail("This time is not part of the doctor’s schedule.");
         if (!slot.Available) return ServiceResult<Appointment>.Fail("This time is no longer available. Please choose another time.", 409);
 
+        var duration = (int)(TimeOnly.Parse(slot.End) - time).TotalMinutes;
+        var broken = await CheckPatientRulesAsync(patientId, date, time, duration, byStaff, null, ct);
+        if (broken is not null) return ServiceResult<Appointment>.Fail(broken, 409);
+
         var now = Now;
         var status = byStaff ? AppointmentStatus.Approved : AppointmentStatus.Pending;
         var appt = new Appointment
         {
             PatientId = patientId, DoctorId = req.DoctorId, Date = date, Time = time,
-            Duration = (int)(TimeOnly.Parse(slot.End) - time).TotalMinutes,
+            Duration = duration,
             Type = req.Type.Trim(), Reason = req.Reason.Trim(), Notes = string.IsNullOrWhiteSpace(req.Notes) ? null : req.Notes.Trim(),
             FirstVisit = req.FirstVisit, Status = status, RequestedOn = now,
             ClinicNote = byStaff ? DefaultApprovedNote : PendingNote,
@@ -147,7 +196,10 @@ public class ClinicService(ClinicDbContext db, TimeProvider clock, IPasswordHash
     public Task<ServiceResult<Appointment>> ApproveAsync(int id, string? note, CancellationToken ct = default) =>
         TransitionAsync(id, [AppointmentStatus.Pending], AppointmentStatus.Approved, "Approved by clinic",
             a => a.ClinicNote = string.IsNullOrWhiteSpace(note) ? DefaultApprovedNote : note.Trim(),
-            ("APPROVAL", "Your appointment is approved", "Your visit is confirmed. Please arrive 15 minutes early.", "view-appointment"), ct);
+            ("APPROVAL", "Your appointment is approved", "Your visit is confirmed. Please arrive 15 minutes early.", "view-appointment"), ct,
+            a => HasStarted(a) ? "This time has already passed. Reschedule or reject the request."
+                : a.Doctor?.Status == DoctorStatus.OnLeave ? "This doctor is on leave. Set them available first, or reject the request."
+                : null);
 
     public Task<ServiceResult<Appointment>> RejectAsync(int id, string? reason, CancellationToken ct = default) =>
         string.IsNullOrWhiteSpace(reason)
@@ -162,23 +214,126 @@ public class ClinicService(ClinicDbContext db, TimeProvider clock, IPasswordHash
         var note = $"Cancelled by {by}{(string.IsNullOrWhiteSpace(reason) ? "." : ": " + reason.Trim())}";
         return TransitionAsync(id, [AppointmentStatus.Pending, AppointmentStatus.Approved], AppointmentStatus.Cancelled, $"Cancelled by {by}",
             a => a.ClinicNote = note,
-            ("CANCELLATION", "Your appointment was cancelled", byPatient ? "Cancelled at your request. You can book a new visit anytime." : note, "book"), ct);
+            ("CANCELLATION", "Your appointment was cancelled", byPatient ? "Cancelled at your request. You can book a new visit anytime." : note, "book"), ct,
+            a => byPatient && HasStarted(a) ? "This visit time has already passed. Please contact the clinic." : null);
     }
 
     public Task<ServiceResult<Appointment>> CompleteAsync(int id, string? summary, CancellationToken ct = default) =>
         TransitionAsync(id, [AppointmentStatus.Approved], AppointmentStatus.Completed, "Visit completed",
             a => { a.VisitSummary = string.IsNullOrWhiteSpace(summary) ? null : summary.Trim(); a.ClinicNote = null; },
             ("COMPLETED", "Your visit is complete",
-                string.IsNullOrWhiteSpace(summary) ? "Thank you for visiting ClinicFlow." : "Your doctor's notes are now available.", "view-appointment"), ct);
+                string.IsNullOrWhiteSpace(summary) ? "Thank you for visiting ClinicFlow." : "Your doctor's notes are now available.", "view-appointment"), ct,
+            a => HasStarted(a) ? null : "This visit hasn't started yet, so it can't be completed.");
+
+    public Task<ServiceResult<Appointment>> MarkNoShowAsync(int id, string? note, CancellationToken ct = default) =>
+        TransitionAsync(id, [AppointmentStatus.Approved], AppointmentStatus.NoShow, "Marked as no-show",
+            a => a.ClinicNote = string.IsNullOrWhiteSpace(note) ? "You did not attend this appointment." : note.Trim(),
+            ("NO-SHOW", "You missed your appointment", "Please book a new visit if you still need care.", "book"), ct,
+            a => HasStarted(a) ? null : "This visit hasn't started yet, so it can't be marked as a no-show.");
+
+    /// <summary>
+    /// Moves an upcoming appointment to another free slot with the same doctor. A patient's change goes back
+    /// to Pending for review; a change made by staff is Approved.
+    /// </summary>
+    public async Task<ServiceResult<Appointment>> RescheduleAsync(int id, RescheduleRequest req, bool byStaff, CancellationToken ct = default)
+    {
+        if (!Mapping.TryParseDate(req.Date, out var date) || !Mapping.TryParseTime(req.Time, out var time))
+            return ServiceResult<Appointment>.Fail("Invalid date or time.");
+
+        await BookingLock.WaitAsync(ct);
+        try
+        {
+            var appt = await db.Appointments.Include(a => a.History).Include(a => a.Doctor).Include(a => a.Patient)
+                .FirstOrDefaultAsync(a => a.Id == id, ct);
+            if (appt is null) return ServiceResult<Appointment>.Fail("Appointment not found.", 404);
+            if (!appt.IsActive)
+                return ServiceResult<Appointment>.Fail("Only pending or approved appointments can be rescheduled.", 409);
+            // Staff may move a visit whose time passed (for example a request they couldn't review in time).
+            if (!byStaff && HasStarted(appt))
+                return ServiceResult<Appointment>.Fail("This visit time has already passed. Please contact the clinic.", 409);
+            if (appt.Patient?.Status != PatientStatus.Active)
+                return ServiceResult<Appointment>.Fail("This patient account is not active.");
+
+            var slot = (await GetSlotsAsync(appt.DoctorId, date, ct)).FirstOrDefault(s => s.Time == time.Hhmm());
+            if (slot is null) return ServiceResult<Appointment>.Fail("This time is not part of the doctor’s schedule.");
+            if (!slot.Available) return ServiceResult<Appointment>.Fail("This time is no longer available. Please choose another time.", 409);
+            var duration = (int)(TimeOnly.Parse(slot.End) - time).TotalMinutes;
+            var broken = await CheckPatientRulesAsync(appt.PatientId, date, time, duration, byStaff, appt.Id, ct);
+            if (broken is not null) return ServiceResult<Appointment>.Fail(broken, 409);
+
+            var previous = $"{appt.Date.Iso()} {appt.Time.To12h()}";
+            appt.Date = date;
+            appt.Time = time;
+            appt.Duration = duration;
+            appt.Status = byStaff ? AppointmentStatus.Approved : AppointmentStatus.Pending;
+            appt.ClinicNote = byStaff ? DefaultApprovedNote : PendingNote;
+            appt.RefreshSlotKey();
+            appt.History.Add(new AppointmentEvent { Label = $"Rescheduled by {(byStaff ? "clinic" : "patient")}", At = Now });
+            try
+            {
+                await db.SaveChangesAsync(ct);
+            }
+            catch (DbUpdateException)
+            {
+                return ServiceResult<Appointment>.Fail("This time was just booked by someone else. Please choose another time.", 409);
+            }
+
+            await NotifyAsync(appt, appt.Doctor, "RESCHEDULE",
+                byStaff ? "Your appointment was moved" : "Reschedule request sent",
+                byStaff ? $"The clinic moved your visit from {previous}. Please check the new time."
+                    : $"The clinic will review your new time. Previous time: {previous}.",
+                "view-appointment", ct);
+            return ServiceResult<Appointment>.Success(appt);
+        }
+        finally
+        {
+            BookingLock.Release();
+        }
+    }
+
+    /// <summary>Closes requests that were still waiting for review when their visit time arrived.</summary>
+    public async Task<int> ExpireStaleRequestsAsync(CancellationToken ct = default)
+    {
+        var today = Today;
+        var candidates = await db.Appointments.Where(a => a.Status == AppointmentStatus.Pending && a.Date <= today)
+            .Select(a => new { a.Id, a.Date, a.Time }).ToListAsync(ct);
+        var expired = 0;
+        foreach (var c in candidates.Where(c => c.Date.ToDateTime(c.Time) <= Now))
+        {
+            var r = await TransitionAsync(c.Id, [AppointmentStatus.Pending], AppointmentStatus.Expired, "Request expired",
+                a => a.ClinicNote = "The clinic did not review this request before the visit time. Please book a new time.",
+                ("EXPIRED", "Your appointment request expired", "It was not reviewed in time. Please book a new visit.", "book"), ct);
+            if (r.Ok) expired++;
+        }
+        return expired;
+    }
+
+    /// <summary>Tells patients with upcoming visits that their doctor is now on leave.</summary>
+    public async Task NotifyDoctorOnLeaveAsync(Doctor doctor, CancellationToken ct = default)
+    {
+        var today = Today;
+        var upcoming = (await db.Appointments.AsNoTracking()
+                .Where(a => a.DoctorId == doctor.Id && a.Date >= today &&
+                            (a.Status == AppointmentStatus.Pending || a.Status == AppointmentStatus.Approved))
+                .ToListAsync(ct))
+            .Where(a => !HasStarted(a));
+        foreach (var a in upcoming)
+            await NotifyAsync(a, doctor, "SCHEDULE UPDATE", $"{doctor.Name} is on leave",
+                "Your appointment may be affected. The clinic will contact you, or you can cancel and book another doctor.",
+                "view-appointment", ct);
+    }
 
     private async Task<ServiceResult<Appointment>> TransitionAsync(
         int id, AppointmentStatus[] from, AppointmentStatus to, string label, Action<Appointment> apply,
-        (string Type, string Title, string Message, string Action) notice, CancellationToken ct)
+        (string Type, string Title, string Message, string Action) notice, CancellationToken ct,
+        Func<Appointment, string?>? guard = null)
     {
         var appt = await db.Appointments.Include(a => a.History).Include(a => a.Doctor).FirstOrDefaultAsync(a => a.Id == id, ct);
         if (appt is null) return ServiceResult<Appointment>.Fail("Appointment not found.", 404);
         if (!from.Contains(appt.Status))
-            return ServiceResult<Appointment>.Fail($"A {appt.Status.ToString().ToLower()} appointment can’t be {to.ToString().ToLower()}.", 409);
+            return ServiceResult<Appointment>.Fail($"A {Mapping.AppointmentStatusText(appt.Status).ToLower()} appointment can’t be {Mapping.AppointmentStatusText(to).ToLower()}.", 409);
+        var blocked = guard?.Invoke(appt);
+        if (blocked is not null) return ServiceResult<Appointment>.Fail(blocked, 409);
 
         apply(appt);
         appt.Status = to;

@@ -1,5 +1,6 @@
 using ClinicFlow.Api.Data;
 using ClinicFlow.Api.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -20,13 +21,13 @@ public class FixedClock(DateTimeOffset? now = null) : TimeProvider
 
 public static class TestDb
 {
-    /// <summary>A fresh in-memory database seeded with the demo data, plus a ClinicService using it.</summary>
+    /// <summary>A fresh in-memory database seeded with sample data, plus a ClinicService using it.</summary>
     public static async Task<(ClinicDbContext Db, ClinicService Clinic, FixedClock Clock)> CreateAsync()
     {
         var db = new ClinicDbContext(new DbContextOptionsBuilder<ClinicDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
         var clock = new FixedClock();
-        await DemoSeeder.SeedIfEmptyAsync(db, clock);
+        await TestData.SeedIfEmptyAsync(db, clock);
         db.ChangeTracker.Clear();
         return (db, new ClinicService(db, clock, new PasswordHasher<object>()), clock);
     }
@@ -50,12 +51,15 @@ public class ApiFactory : WebApplicationFactory<Program>
             services.AddDbContext<ClinicDbContext>(o => o.UseInMemoryDatabase(_dbName));
             services.RemoveAll<TimeProvider>();
             services.AddSingleton<TimeProvider>(Clock);
+            // Tokens are issued with the fixed test clock, so don't compare their expiry with the real time.
+            services.PostConfigure<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme,
+                o => o.TokenValidationParameters.ValidateLifetime = false);
         });
     }
 
     public async Task SeedAsync()
     {
         using var scope = Services.CreateScope();
-        await DemoSeeder.SeedIfEmptyAsync(scope.ServiceProvider.GetRequiredService<ClinicDbContext>(), Clock);
+        await TestData.SeedIfEmptyAsync(scope.ServiceProvider.GetRequiredService<ClinicDbContext>(), Clock);
     }
 }

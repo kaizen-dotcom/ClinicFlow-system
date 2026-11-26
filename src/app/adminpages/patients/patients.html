@@ -60,7 +60,7 @@
             <td><span class="badge" [ngClass]="getStatusClass(patient.status)">{{ patient.status }}</span></td>
             <td>
               <div class="actions-cell">
-                <button type="button" class="link-btn" (click)="viewingId.set(patient.id)">View</button> /
+                <button type="button" class="link-btn" (click)="view(patient.id)">View</button> /
                 <button type="button" class="link-btn" (click)="openEdit(patient)">Edit</button>
               </div>
             </td>
@@ -100,6 +100,7 @@
         <button type="button" class="cf-close" aria-label="Close" (click)="viewingId.set(null)">&times;</button>
       </header>
       <div class="cf-modal-body">
+        @if (panelMessage) { <p class="cf-alert cf-alert-success" role="status">{{ panelMessage }}</p> }
         <section>
           <h3 class="cf-section-title">Contact & personal details</h3>
           <dl class="cf-dl">
@@ -133,6 +134,7 @@
         <button type="button" class="btn-secondary cf-left" (click)="toggleStatus(p)">
           {{ p.status === 'Active' ? 'Deactivate account' : 'Reactivate account' }}
         </button>
+        <button type="button" class="btn-secondary" (click)="resetPassword(p)">Reset password</button>
         <button type="button" class="btn-secondary" (click)="viewingId.set(null); openEdit(p)">Edit</button>
         @if (p.status === 'Active') {
           <button type="button" class="btn-primary" (click)="bookFor(p)">Book appointment</button>
@@ -185,7 +187,7 @@
         </div>
         <footer class="cf-modal-footer">
           <button type="button" class="btn-secondary" (click)="editing = null">Cancel</button>
-          <button type="submit" class="btn-primary">{{ e.id ? 'Save changes' : 'Add patient' }}</button>
+          <button type="submit" class="btn-primary" [disabled]="saving" [class.is-busy]="saving">{{ e.id ? 'Save changes' : 'Add patient' }}</button>
         </footer>
       </form>
     </div>

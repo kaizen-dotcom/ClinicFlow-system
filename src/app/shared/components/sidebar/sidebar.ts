@@ -12,7 +12,6 @@ import {
   LucideClock,
   LucideBarChart2,
   LucideUser,
-  LucideArrowUpRight,
   LucideLogOut
 } from '@lucide/angular';
 
@@ -25,7 +24,6 @@ import {
   styleUrls: ['./sidebar.css']
 })
 export class SidebarComponent {
-  readonly ArrowUpRightIcon = LucideArrowUpRight;
   readonly logoutIcon = LucideLogOut;
   showLogoutConfirm = false;
 

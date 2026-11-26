@@ -13,7 +13,7 @@ var builder = WebApplication.CreateBuilder(args);
 var config = builder.Configuration;
 
 // ---------- Database (MySQL) ----------
-// Set with: dotnet user-secrets set "ConnectionStrings:ClinicFlow" "server=localhost;port=3306;database=clinicflow;user=clinicflow;password=..."
+// Set with: dotnet user-secrets set "ConnectionStrings:ClinicFlow" "server=localhost;port=3306;database=clinicflow_db;user=...;password=..."
 var connectionString = config.GetConnectionString("ClinicFlow")
     ?? throw new InvalidOperationException(
         "Missing connection string 'ConnectionStrings:ClinicFlow'. Set it with 'dotnet user-secrets set' (see README.md).");
@@ -35,6 +35,8 @@ builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<IPasswordHasher<object>, PasswordHasher<object>>();
 builder.Services.AddSingleton<TokenService>();
 builder.Services.AddScoped<ClinicService>();
+// Tests control the clock and database themselves, so the background job is left out there.
+if (!builder.Environment.IsEnvironment("Testing")) builder.Services.AddHostedService<ExpiryService>();
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -50,6 +52,7 @@ builder.Services
             RoleClaimType = System.Security.Claims.ClaimTypes.Role,
             NameClaimType = "sub"
         };
+        o.Events = new JwtBearerEvents { OnTokenValidated = SessionValidator.ValidateAsync };
     });
 builder.Services.AddAuthorization();
 
@@ -63,7 +66,7 @@ builder.Services.AddRateLimiter(o =>
 });
 
 // ---------- CORS (Angular dev server) ----------
-var allowedOrigins = config.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? ["http://localhost:4200"];
+var allowedOrigins = config.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? ["https://localhost:4200"];
 builder.Services.AddCors(o => o.AddDefaultPolicy(p => p.WithOrigins(allowedOrigins).AllowAnyHeader().AllowAnyMethod()));
 
 // ---------- MVC ----------
@@ -87,7 +90,7 @@ if (app.Environment.IsDevelopment())
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<ClinicDbContext>();
     await db.Database.MigrateAsync();
-    await DemoSeeder.SeedIfEmptyAsync(db, scope.ServiceProvider.GetRequiredService<TimeProvider>());
+    await AdminSetup.CreateFirstAdminAsync(scope.ServiceProvider, app.Configuration, app.Logger);
 }
 
 if (app.Environment.IsDevelopment())
@@ -96,6 +99,7 @@ if (app.Environment.IsDevelopment())
 }
 else
 {
+    app.UseHsts(); // tells browsers to use HTTPS only
     app.UseHttpsRedirection();
 }
 

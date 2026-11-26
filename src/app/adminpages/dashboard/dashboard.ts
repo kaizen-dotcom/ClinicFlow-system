@@ -1,4 +1,5 @@
-import { Component, computed, inject } from '@angular/core';
+import { ToastService } from '../../shared/services/toast.service';
+import { ChangeDetectorRef, Component, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { AdminUiService } from '../../shared/services/admin-ui.service';
@@ -15,12 +16,15 @@ import { addDays, startOfWeek, todayISO } from '../../shared/utils/time';
 export class DashboardComponent {
   readonly ui = inject(AdminUiService);
   private readonly clinic = inject(ClinicStore);
+  private readonly toast = inject(ToastService);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   readonly today = todayISO();
-  message = '';
+  /** Appointment being approved, to show progress on its button. */
+  approving = '';
 
   readonly todaysAppointments = computed(() =>
-    this.clinic.appointments().filter(a => a.date === this.today && a.status !== 'Rejected')
+    this.clinic.appointments().filter(a => a.date === this.today && a.status !== 'Rejected' && a.status !== 'Expired')
   );
 
   readonly pendingRequests = computed(() => this.clinic.appointments().filter(a => a.status === 'Pending'));
@@ -39,7 +43,7 @@ export class DashboardComponent {
       { label: 'Pending requests', value: this.pendingRequests().length,
         subtext: this.pendingRequests().length ? 'Needs your review' : 'All caught up', isPositive: !this.pendingRequests().length },
       { label: 'Doctors working today', value: active.filter(d => doctorsWithHoursToday.has(d.id)).length,
-        subtext: `of ${this.clinic.doctors().length} doctors`, isPositive: false },
+        subtext: `of ${this.clinic.doctors().length} doctor${this.clinic.doctors().length === 1 ? '' : 's'}`, isPositive: false },
       { label: 'Registered patients', value: patients.length,
         subtext: `+${newThisWeek} this week · ${all.filter(a => a.date >= weekStart && a.date < addDays(weekStart, 7)).length} visits this week`, isPositive: newThisWeek > 0 }
     ];
@@ -53,9 +57,14 @@ export class DashboardComponent {
       .slice(0, 5)
   );
 
-  approve(id: string) {
-    const r = this.clinic.approve(id);
-    this.message = r.ok ? `${id} approved. The patient has been notified.` : r.error;
+  async approve(id: string) {
+    if (this.approving) return;
+    this.approving = id;
+    const r = await this.clinic.approve(id);
+    this.approving = '';
+    if (r.ok) this.toast.success(`${id} approved. The patient has been notified.`);
+    else this.toast.error(r.error);
+    this.cdr.markForCheck();
   }
 
   getStatusClass(status: string): string {

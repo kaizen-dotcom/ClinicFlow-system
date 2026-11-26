@@ -24,13 +24,13 @@ public class ApiTests : IAsyncLifetime
         return client;
     }
 
-    private Task<HttpClient> Admin() => LoginAs(DemoSeeder.AdminEmail, DemoSeeder.AdminPassword);
-    private Task<HttpClient> Emma() => LoginAs("emma.wilson@example.com", DemoSeeder.PatientPassword);
+    private Task<HttpClient> Admin() => LoginAs(TestData.AdminEmail, TestData.AdminPassword);
+    private Task<HttpClient> Emma() => LoginAs("emma.wilson@example.com", TestData.PatientPassword);
 
     [Fact]
     public async Task Wrong_password_is_rejected_with_a_generic_message()
     {
-        var res = await _factory.CreateClient().PostAsJsonAsync("/api/auth/login", new LoginRequest(DemoSeeder.AdminEmail, "nope"));
+        var res = await _factory.CreateClient().PostAsJsonAsync("/api/auth/login", new LoginRequest(TestData.AdminEmail, "nope"));
         Assert.Equal(HttpStatusCode.Unauthorized, res.StatusCode);
         Assert.Equal("Incorrect email or password.", (await res.Content.ReadFromJsonAsync<ErrorResponse>())!.Error);
     }
@@ -38,7 +38,7 @@ public class ApiTests : IAsyncLifetime
     [Fact]
     public async Task Inactive_patient_cannot_log_in()
     {
-        var res = await _factory.CreateClient().PostAsJsonAsync("/api/auth/login", new LoginRequest("lucas.t@example.com", DemoSeeder.PatientPassword));
+        var res = await _factory.CreateClient().PostAsJsonAsync("/api/auth/login", new LoginRequest("lucas.t@example.com", TestData.PatientPassword));
         Assert.Equal(HttpStatusCode.Forbidden, res.StatusCode);
     }
 
@@ -92,6 +92,40 @@ public class ApiTests : IAsyncLifetime
 
         var notes = (await emma.GetFromJsonAsync<List<NotificationDto>>("/api/notifications"))!;
         Assert.Contains(notes, n => n.Type == "APPROVAL" && n.Action.AppointmentId == appt.Id);
+    }
+
+    [Fact]
+    public async Task Changing_the_password_ends_other_sessions()
+    {
+        var current = await Emma();
+        var other = await Emma();
+
+        var wrong = await current.PostAsJsonAsync("/api/auth/password", new ChangePasswordRequest("nope", "NewSecret123"));
+        Assert.Equal(HttpStatusCode.BadRequest, wrong.StatusCode);
+        var res = await current.PostAsJsonAsync("/api/auth/password", new ChangePasswordRequest(TestData.PatientPassword, "NewSecret123"));
+        var auth = (await res.Content.ReadFromJsonAsync<AuthResponse>())!;
+
+        Assert.Equal(HttpStatusCode.Unauthorized, (await other.GetAsync("/api/patients/me")).StatusCode);
+        current.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", auth.Token);
+        Assert.Equal(HttpStatusCode.OK, (await current.GetAsync("/api/patients/me")).StatusCode);
+        await LoginAs("emma.wilson@example.com", "NewSecret123");
+    }
+
+    [Fact]
+    public async Task Deactivation_and_password_reset_take_effect_immediately()
+    {
+        var emma = await Emma();
+        var admin = await Admin();
+        Assert.Equal(HttpStatusCode.Forbidden, (await emma.PostAsync("/api/patients/CF-1025/reset-password", null)).StatusCode);
+
+        await admin.PutAsJsonAsync("/api/patients/CF-1024/status", new SetStatusRequest("Inactive"));
+        Assert.Equal(HttpStatusCode.Unauthorized, (await emma.GetAsync("/api/appointments")).StatusCode);
+        await admin.PutAsJsonAsync("/api/patients/CF-1024/status", new SetStatusRequest("Active"));
+
+        var reset = await admin.PostAsync("/api/patients/CF-1024/reset-password", null);
+        var temporary = (await reset.Content.ReadFromJsonAsync<TemporaryPasswordResponse>())!.TemporaryPassword;
+        Assert.Equal(HttpStatusCode.Unauthorized, (await emma.GetAsync("/api/appointments")).StatusCode);
+        await LoginAs("emma.wilson@example.com", temporary);
     }
 
     [Fact]

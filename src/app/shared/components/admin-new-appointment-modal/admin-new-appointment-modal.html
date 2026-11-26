@@ -95,7 +95,7 @@
 
           <footer class="cf-modal-footer">
             <button type="button" class="btn-secondary" (click)="close()">Cancel</button>
-            <button type="submit" class="btn-primary">Book appointment</button>
+            <button type="submit" class="btn-primary" [disabled]="busy" [class.is-busy]="busy">Book appointment</button>
           </footer>
         </form>
       }

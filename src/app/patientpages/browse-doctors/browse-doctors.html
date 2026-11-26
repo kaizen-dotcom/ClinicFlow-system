@@ -46,7 +46,12 @@
 </div>
 
 <!-- Empty State -->
-<div class="empty-state" *ngIf="filteredDoctors.length === 0">
+<div class="empty-state" *ngIf="doctors.length === 0">
+  <h3>No doctors listed yet</h3>
+  <p>The clinic hasn't added any doctors. Please check back later.</p>
+</div>
+
+<div class="empty-state" *ngIf="doctors.length > 0 && filteredDoctors.length === 0">
   <h3>No doctors found</h3>
   <p>Try a different name, or choose another specialty.</p>
   <button type="button" class="btn-outline" (click)="clearFilters()">Clear filters</button>

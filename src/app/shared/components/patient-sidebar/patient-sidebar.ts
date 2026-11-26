@@ -1,4 +1,5 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
+import { ClinicStore } from '../../services/clinic-store.service';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../../auth/auth.service';
@@ -11,8 +12,7 @@ import {
   LucideCalendar,
   LucideBell,
   LucideUser,
-  LucideLogOut,
-  LucideArrowUpRight
+  LucideLogOut
 } from '@lucide/angular';
 
 @Component({
@@ -24,7 +24,7 @@ import {
 })
 export class PatientSidebarComponent {
   readonly logoutIcon = LucideLogOut;
-  readonly ArrowUpRightIcon = LucideArrowUpRight;
+  readonly clinic = inject(ClinicStore);
   showLogoutConfirm = false;
 
   constructor(private router: Router, private auth: AuthService, public booking: BookingModalService) {}

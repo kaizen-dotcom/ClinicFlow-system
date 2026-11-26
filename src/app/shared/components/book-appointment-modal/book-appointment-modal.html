@@ -77,6 +77,10 @@
                 </label>
               </div>
 
+              @if (!clinic.activeDoctors().length) {
+                <p class="empty">No doctors are accepting appointments yet. Please check back later.</p>
+              }
+
               @if (form.doctorId) {
                 @if (dates.length) {
                   <div class="field">
@@ -147,14 +151,14 @@
 
           <footer class="modal-footer">
             <button type="button" class="btn-secondary" (click)="close()">Cancel</button>
-            <button type="submit" class="btn-primary">Request appointment</button>
+            <button type="submit" class="btn-primary" [disabled]="busy" [class.is-busy]="busy">Request appointment</button>
           </footer>
         </form>
       } @else {
         <div class="modal-body">
           <div class="summary">
             <strong>{{ doctor?.name }}</strong> · {{ form.type }}<br />
-            {{ form.date | date: 'EEEE, d MMMM y' }} · {{ slot?.label }}<br />
+            {{ form.date | date: 'EEEE, d MMMM y' }} · {{ bookedLabel }}<br />
             ClinicFlow · {{ doctor?.location }}<br />
             Reference: {{ createdId }} · Status: <span class="badge">Pending</span>
           </div>

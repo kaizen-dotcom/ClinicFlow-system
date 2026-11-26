@@ -1,4 +1,5 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { ToastService } from '../../shared/services/toast.service';
+import { ChangeDetectorRef, Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
@@ -21,6 +22,8 @@ const ROW_MIN = 30;
 })
 export class Schedules {
   readonly clinic = inject(ClinicStore);
+  private readonly toast = inject(ToastService);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   readonly StethoscopeIcon = LucideStethoscope;
   readonly ChevronDownIcon = LucideChevronDown;
@@ -34,7 +37,7 @@ export class Schedules {
 
   readonly doctorId = signal('');
   readonly weekStart = signal(startOfWeek(todayISO()));
-  readonly selectedBlockId = signal<string | null>(null);
+  readonly selectedBlockId = signal<number | null>(null);
 
   form = {
     doctorId: '',
@@ -46,7 +49,7 @@ export class Schedules {
     repeatWeeks: 4
   };
   formError = '';
-  message = '';
+  saving = false;
 
   constructor() {
     const fromQuery = inject(ActivatedRoute).snapshot.queryParamMap.get('doctor');
@@ -114,9 +117,9 @@ export class Schedules {
     this.selectedBlockId.set(null);
   }
 
-  createSchedule() {
+  async createSchedule() {
+    if (this.saving) return;
     this.formError = '';
-    this.message = '';
     if (!this.form.doctorId || !this.form.date || !this.form.start || !this.form.end) {
       this.formError = 'Fill in the doctor, date and hours.';
       return;
@@ -129,24 +132,33 @@ export class Schedules {
       this.formError = 'Opening hours are 8:00 AM – 6:00 PM.';
       return;
     }
-    const r = this.clinic.addAvailability({
-      doctorId: this.form.doctorId, date: this.form.date, start: this.form.start, end: this.form.end,
+    const { doctorId, date, start, end } = this.form;
+    this.saving = true;
+    const r = await this.clinic.addAvailability({
+      doctorId, date, start, end,
       slotMinutes: Number(this.form.slotMinutes), repeatWeeks: this.form.repeat ? Number(this.form.repeatWeeks) : 0
     });
+    this.saving = false;
+    this.cdr.markForCheck();
     if (!r.ok) { this.formError = r.error; return; }
-    this.message = `Added ${r.created} day${r.created === 1 ? '' : 's'} of availability` +
-      (r.skipped ? ` (${r.skipped} skipped because they overlap existing hours).` : '.');
+    this.toast.success(`Added ${r.created} day${r.created === 1 ? '' : 's'} of availability` +
+      (r.skipped ? ` (${r.skipped} skipped because they overlap existing hours).` : '.'));
     // Show the week of the first new block for that doctor.
-    this.doctorId.set(this.form.doctorId);
-    this.weekStart.set(startOfWeek(this.form.date));
+    this.doctorId.set(doctorId);
+    this.weekStart.set(startOfWeek(date));
   }
 
-  removeSelected() {
+  async removeSelected() {
     const b = this.selectedBlock();
     if (!b) return;
-    const r = this.clinic.removeAvailability(b.id);
-    this.message = r.ok ? 'Availability removed.' : r.error;
-    if (r.ok) this.selectedBlockId.set(null);
+    const r = await this.clinic.removeAvailability(b.id);
+    if (r.ok) {
+      this.toast.success('Availability removed.');
+      this.selectedBlockId.set(null);
+    } else {
+      this.toast.error(r.error);
+    }
+    this.cdr.markForCheck();
   }
 
   isCurrentWeek(): boolean {

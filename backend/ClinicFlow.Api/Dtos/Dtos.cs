@@ -53,6 +53,8 @@ public record CreatePatientRequest(
 
 public record CreatePatientResponse(PatientDto Patient, string TemporaryPassword);
 
+public record TemporaryPasswordResponse(string TemporaryPassword);
+
 public record SetStatusRequest([Required, RegularExpression("Active|Inactive")] string Status);
 
 // ---------- Appointments ----------
@@ -74,6 +76,8 @@ public record CreateAppointmentRequest(
     bool FirstVisit);
 
 public record NoteRequest([MaxLength(2000)] string? Text);
+
+public record RescheduleRequest([Required] string Date, [Required] string Time);
 
 // ---------- Schedules ----------
 public record SlotDto(string Time, string End, string Label, bool Available, bool Booked);
@@ -99,6 +103,10 @@ public record NotificationActionDto(string Kind, string? AppointmentId, string? 
 
 public record NotificationDto(string Id, string PatientId, string Type, string Title, string Subtitle, string Message,
     DateTime CreatedAt, bool Read, NotificationActionDto Action);
+
+// ---------- Clinic ----------
+/// <summary>Public contact details shown to patients and on the login page.</summary>
+public record ClinicInfoDto(string Name, string Phone);
 
 // ---------- Admin ----------
 public record AdminProfileDto(string FullName, string Email, string Phone, string ClinicName, string PasswordUpdatedOn);

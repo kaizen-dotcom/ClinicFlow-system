@@ -1,14 +1,12 @@
+using ClinicFlow.Api.Data;
 using ClinicFlow.Api.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
-namespace ClinicFlow.Api.Data;
+namespace ClinicFlow.Api.Tests;
 
-/// <summary>
-/// Demo data matching the Angular app's sample data, generated relative to today so the demo
-/// always has upcoming visits and open slots. Only used when the database is empty (or on reset).
-/// </summary>
-public static class DemoSeeder
+/// <summary>Sample records used only by the automated tests (in-memory database).</summary>
+public static class TestData
 {
     public const string AdminEmail = "admin@clinicflow.com";
     public const string AdminPassword = "Admin@123";
@@ -17,21 +15,6 @@ public static class DemoSeeder
     public static async Task SeedIfEmptyAsync(ClinicDbContext db, TimeProvider clock, CancellationToken ct = default)
     {
         if (await db.Admins.AnyAsync(ct)) return;
-        await SeedAsync(db, clock, ct);
-    }
-
-    /// <summary>Deletes everything and re-seeds (development only).</summary>
-    public static async Task ResetAsync(ClinicDbContext db, TimeProvider clock, CancellationToken ct = default)
-    {
-        db.Notifications.RemoveRange(db.Notifications);
-        db.AppointmentEvents.RemoveRange(db.AppointmentEvents);
-        db.Appointments.RemoveRange(db.Appointments);
-        db.ScheduleBlocks.RemoveRange(db.ScheduleBlocks);
-        db.Patients.RemoveRange(db.Patients);
-        db.Doctors.RemoveRange(db.Doctors);
-        db.Admins.RemoveRange(db.Admins);
-        await db.SaveChangesAsync(ct);
-        db.ChangeTracker.Clear();
         await SeedAsync(db, clock, ct);
     }
 

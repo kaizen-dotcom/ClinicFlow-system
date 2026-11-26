@@ -15,8 +15,6 @@
   }
 </div>
 
-@if (message) { <p class="cf-alert cf-alert-success page-message" role="status">{{ message }}</p> }
-
 <!-- Main Container -->
 <div class="section-container">
 
@@ -70,7 +68,7 @@
             </td>
           </tr>
         } @empty {
-          <tr><td colspan="6" class="cf-empty">No doctors match these filters.</td></tr>
+          <tr><td colspan="6" class="cf-empty">{{ clinic.doctors().length ? 'No doctors match these filters.' : 'No doctors yet. Use “Add doctor” to create the first one.' }}</td></tr>
         }
       </tbody>
     </table>
@@ -140,7 +138,7 @@
         </div>
         <footer class="cf-modal-footer">
           <button type="button" class="btn-secondary" (click)="editing = null">Cancel</button>
-          <button type="submit" class="btn-primary">{{ e.id ? 'Save changes' : 'Add doctor' }}</button>
+          <button type="submit" class="btn-primary" [disabled]="saving" [class.is-busy]="saving">{{ e.id ? 'Save changes' : 'Add doctor' }}</button>
         </footer>
       </form>
     </div>

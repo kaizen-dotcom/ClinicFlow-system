@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
 
@@ -24,7 +25,14 @@ public class JwtOptions
 
 public class TokenService(JwtOptions options, TimeProvider clock)
 {
-    public (string Token, DateTime ExpiresAt) Create(string userId, string role, string email)
+    /// <summary>Claim that ties a token to the password it was issued for.</summary>
+    public const string StampClaim = "stamp";
+
+    /// <summary>A fingerprint of the stored password hash; it changes whenever the password does.</summary>
+    public static string Stamp(string passwordHash) =>
+        Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(passwordHash)))[..16];
+
+    public (string Token, DateTime ExpiresAt) Create(string userId, string role, string email, string passwordHash)
     {
         var expires = clock.GetUtcNow().UtcDateTime.AddHours(options.ExpiryHours);
         var token = new JwtSecurityToken(
@@ -34,7 +42,8 @@ public class TokenService(JwtOptions options, TimeProvider clock)
             [
                 new Claim(JwtRegisteredClaimNames.Sub, userId),
                 new Claim(ClaimTypes.Role, role),
-                new Claim(JwtRegisteredClaimNames.Email, email)
+                new Claim(JwtRegisteredClaimNames.Email, email),
+                new Claim(StampClaim, Stamp(passwordHash))
             ],
             expires: expires,
             signingCredentials: new SigningCredentials(options.SigningKey(), SecurityAlgorithms.HmacSha256));

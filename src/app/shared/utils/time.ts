@@ -74,6 +74,12 @@ export function nowHHmm(): string {
   return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+/** True once a visit's start time has arrived. */
+export function hasStarted(date: string, time: string): boolean {
+  const today = todayISO();
+  return date < today || (date === today && time <= nowHHmm());
+}
+
 function pad(n: number): string {
   return String(n).padStart(2, '0');
 }

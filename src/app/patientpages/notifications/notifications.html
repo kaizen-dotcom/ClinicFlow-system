@@ -7,13 +7,15 @@
 <!-- Tabs Bar -->
 <div class="tabs-bar">
   <div class="tabs">
-    <div class="tab" [class.active]="activeTab() === 'all'" (click)="setTab('all')">
+    <button type="button" class="tab" [class.active]="activeTab() === 'all'" [attr.aria-pressed]="activeTab() === 'all'"
+            (click)="setTab('all')">
       All notifications
-    </div>
-    <div class="tab" [class.active]="activeTab() === 'unread'" (click)="setTab('unread')">
+    </button>
+    <button type="button" class="tab" [class.active]="activeTab() === 'unread'" [attr.aria-pressed]="activeTab() === 'unread'"
+            (click)="setTab('unread')">
       Unread
       @if (mine.unreadCount()) { <span class="tab-count">{{ mine.unreadCount() }}</span> }
-    </div>
+    </button>
   </div>
   @if (mine.unreadCount()) {
     <button type="button" class="mark-read" (click)="markAllAsRead()">Mark all as read</button>
@@ -42,7 +44,7 @@
 <!-- Footer Note -->
 <p class="footer-note">
   @if (visible().length) {
-    You're up to date. New appointment updates will appear here.
+    New appointment updates will appear here.
   } @else {
     {{ activeTab() === 'unread' ? 'No unread notifications.' : 'No notifications yet. Updates about your appointments will appear here.' }}
   }

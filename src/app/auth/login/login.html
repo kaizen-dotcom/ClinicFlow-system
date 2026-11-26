@@ -7,6 +7,10 @@
       <p>Log in to manage your care in one place.</p>
     </div>
 
+    @if (justRegistered) {
+      <p class="login-success" role="status">Your account has been created. Log in to continue.</p>
+    }
+
     <form (ngSubmit)="onSubmit()">
 
       <!-- Email -->
@@ -68,9 +72,8 @@
 
       @if (showResetHelp()) {
         <p class="login-info" role="status">
-          To reset your password, contact the clinic front desk at
-          <a href="mailto:support@clinicflow.com">support&#64;clinicflow.com</a> or +1 (212) 555-0100.
-          We'll verify your identity and send you a reset link.
+          To reset your password, contact the clinic front desk@if (clinic.clinicInfo().phone) { at {{ clinic.clinicInfo().phone }}}.
+          We'll verify your identity and help you get back in.
         </p>
       }
 
@@ -79,8 +82,8 @@
       }
 
       <!-- Login Button -->
-      <button type="submit" class="login-button">
-        Log in
+      <button type="submit" class="login-button" [disabled]="busy()" [class.is-busy]="busy()">
+        {{ busy() ? 'Logging in…' : 'Log in' }}
       </button>
 
     </form>

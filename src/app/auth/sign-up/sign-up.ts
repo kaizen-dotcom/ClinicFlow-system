@@ -1,8 +1,7 @@
-import { Component, inject, signal } from '@angular/core';
+import { ChangeDetectorRef, Component, inject, signal } from '@angular/core';
 import { FormsModule, NgForm } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../auth.service';
-import { ClinicStore } from '../../shared/services/clinic-store.service';
 
 @Component({
   selector: 'app-signup',
@@ -14,7 +13,7 @@ import { ClinicStore } from '../../shared/services/clinic-store.service';
 export class Signup {
   private readonly router = inject(Router);
   private readonly auth = inject(AuthService);
-  private readonly clinic = inject(ClinicStore);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   showPassword = signal(false);
   showConfirmPassword = signal(false);
@@ -31,6 +30,7 @@ export class Signup {
 
   submitted = false;
   error = '';
+  busy = false;
 
   /** Latest date of birth accepted (today). */
   readonly maxDob = new Date().toISOString().slice(0, 10);
@@ -51,25 +51,28 @@ export class Signup {
     this.showConfirmPassword.update(value => !value);
   }
 
-  // Creates the patient account (ClinicStore) and signs the patient in.
-  onSubmit(ngForm: NgForm) {
+  // Creates the patient account, then sends the patient to the login page.
+  async onSubmit(ngForm: NgForm) {
     this.submitted = true;
     this.error = '';
-    if (ngForm.invalid || this.form.password.length < 8 || this.form.password !== this.form.confirmPassword || !this.form.terms) {
+    if (this.busy || ngForm.invalid || this.form.password.length < 8 || this.form.password !== this.form.confirmPassword || !this.form.terms) {
       return;
     }
-    const result = this.clinic.registerPatient({
+    this.busy = true;
+    const result = await this.auth.register({
       fullName: this.form.fullName,
       email: this.form.email,
       phone: this.form.phone,
       dob: this.form.dob,
       password: this.form.password
     });
-    if (!result.ok) {
+    if ('error' in result) {
       this.error = result.error;
-      return;
+    } else {
+      // The email travels in the navigation state (not the URL) so the login form can be prefilled.
+      await this.router.navigateByUrl('/login', { state: { registeredEmail: this.form.email.trim() } });
     }
-    this.auth.loginPatient(result.id!);
-    this.router.navigateByUrl('/patient/dashboard');
+    this.busy = false;
+    this.cdr.markForCheck();
   }
 }

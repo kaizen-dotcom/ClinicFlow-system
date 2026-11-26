@@ -1,7 +1,8 @@
-import { Component, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../auth.service';
+import { ClinicStore } from '../../shared/services/clinic-store.service';
 
 @Component({
   selector: 'app-login',
@@ -14,6 +15,11 @@ export class Login {
 
   constructor(private router: Router, private auth: AuthService) {}
 
+  readonly clinic = inject(ClinicStore);
+
+  // True while the sign-in request is running
+  busy = signal(false);
+
   // Controls password visibility
   showPassword = signal(false);
 
@@ -23,8 +29,12 @@ export class Login {
   // Shown when "Forgot password?" is clicked
   showResetHelp = signal(false);
 
+  // Set when arriving from a successful sign-up
+  private readonly registeredEmail: string = history.state?.registeredEmail ?? '';
+  readonly justRegistered = !!this.registeredEmail;
+
   // Login form data
-  email = '';
+  email = this.registeredEmail;
   password = '';
   rememberMe = false;
 
@@ -38,14 +48,16 @@ export class Login {
   }
 
   // Login form submission: send each role to its own dashboard.
-  // Authentication will be connected to the backend later.
-  onSubmit() {
-    const result = this.auth.login(this.email, this.password, this.rememberMe);
+  async onSubmit() {
+    if (this.busy()) return;
+    this.busy.set(true);
+    this.error.set('');
+    const result = await this.auth.login(this.email, this.password, this.rememberMe);
     if ('error' in result) {
       this.error.set(result.error);
-      return;
+    } else {
+      await this.router.navigateByUrl(this.auth.homeFor(result.role));
     }
-    this.error.set('');
-    this.router.navigateByUrl(this.auth.homeFor(result.role));
+    this.busy.set(false);
   }
 }

@@ -1,4 +1,5 @@
-import { Component, HostListener, computed, inject, signal } from '@angular/core';
+import { ToastService } from '../../shared/services/toast.service';
+import { ChangeDetectorRef, Component, HostListener, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
 import { AdminUiService } from '../../shared/services/admin-ui.service';
@@ -21,6 +22,8 @@ type PatientForm = Pick<Patient, 'fullName' | 'email' | 'phone' | 'dob' | 'gende
 export class PatientsComponent {
   readonly ui = inject(AdminUiService);
   private readonly clinic = inject(ClinicStore);
+  private readonly toast = inject(ToastService);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   readonly search = signal('');
   readonly status = signal<'' | 'Active' | 'Inactive'>('');
@@ -38,7 +41,10 @@ export class PatientsComponent {
   editing: PatientForm | null = null;
   formSubmitted = false;
   formError = '';
+  saving = false;
   message = '';
+  /** Result of an action taken inside the details window. */
+  panelMessage = '';
 
   readonly statCards = computed(() => {
     const all = this.clinic.patients();
@@ -96,28 +102,60 @@ export class PatientsComponent {
     this.formError = '';
   }
 
-  save(f: NgForm) {
+  async save(f: NgForm) {
     this.formSubmitted = true;
     this.formError = '';
-    if (!this.editing || f.invalid) return;
-    const e = this.editing;
-    if (e.id) {
-      const r = this.clinic.updatePatient(e.id, { fullName: e.fullName.trim(), email: e.email, phone: e.phone.trim(), dob: e.dob, gender: e.gender, address: e.address.trim() });
-      if (!r.ok) { this.formError = r.error; return; }
-      this.message = `${e.fullName} updated.`;
+    if (!this.editing || f.invalid || this.saving) return;
+    const { id, ...fields } = this.editing;
+    const input = { ...fields, fullName: fields.fullName.trim(), phone: fields.phone.trim(), address: fields.address.trim() };
+    this.saving = true;
+    if (id) {
+      const r = await this.clinic.updatePatient(id, input);
+      if (r.ok) {
+        this.toast.success(`${input.fullName} updated.`);
+        this.editing = null;
+      } else {
+        this.formError = r.error;
+      }
     } else {
-      // Front-desk registration: a temporary password the patient changes at the desk / via reset.
-      const r = this.clinic.registerPatient({ ...e, password: 'Welcome@123' });
-      if (!r.ok) { this.formError = r.error; return; }
-      this.message = `${e.fullName} registered as ${r.id}. Temporary password: Welcome@123`;
+      // Front-desk registration: the server creates a temporary password to give to the patient.
+      const r = await this.clinic.createPatient(input);
+      if (r.ok) {
+        this.toast.success(`${input.fullName} registered.`);
+        // Stays on the page so it can be copied.
+        this.message = `${input.fullName} registered as ${r.id}. Temporary password (shown only once): ${r.temporaryPassword}`;
+        this.editing = null;
+      } else {
+        this.formError = r.error;
+      }
     }
-    this.editing = null;
+    this.saving = false;
+    this.cdr.markForCheck();
   }
 
-  toggleStatus(p: Patient) {
+  async toggleStatus(p: Patient) {
     const next = p.status === 'Active' ? 'Inactive' : 'Active';
-    this.clinic.updatePatient(p.id, { status: next });
-    this.message = `${p.fullName} is now ${next.toLowerCase()}.`;
+    if (next === 'Inactive' && !confirm(`Deactivate ${p.fullName}? They are signed out and can't log in or book until reactivated.`)) return;
+    const r = await this.clinic.setPatientStatus(p.id, next);
+    if (r.ok) this.toast.success(`${p.fullName} is now ${next.toLowerCase()}.`);
+    else this.toast.error(r.error);
+    this.cdr.markForCheck();
+  }
+
+  view(id: string) {
+    this.panelMessage = '';
+    this.viewingId.set(id);
+  }
+
+  async resetPassword(p: Patient) {
+    if (!confirm(`Reset the password for ${p.fullName}? Their current password will stop working.`)) return;
+    const r = await this.clinic.resetPatientPassword(p.id);
+    if (r.ok) {
+      this.panelMessage = `Temporary password (shown only once): ${r.temporaryPassword}. Ask the patient to change it under My profile.`;
+    } else {
+      this.toast.error(r.error);
+    }
+    this.cdr.markForCheck();
   }
 
   bookFor(p: Patient) {

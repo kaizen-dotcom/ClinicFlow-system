@@ -1,5 +1,7 @@
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ClinicStore } from '../../shared/services/clinic-store.service';
+import { MenuService } from '../../shared/services/menu.service';
 import { RouterOutlet } from '@angular/router';
 import { PatientSidebarComponent } from '../../shared/components/patient-sidebar/patient-sidebar';
 import { PatientNavbarComponent } from '../../shared/components/patient-navbar/patient-navbar';
@@ -16,6 +18,8 @@ import { ThemeService } from '../../shared/services/theme.service';
 })
 export class PatientLayoutComponent implements OnInit, OnDestroy {
   private readonly theme = inject(ThemeService);
+  readonly clinic = inject(ClinicStore);
+  readonly menu = inject(MenuService);
 
   // Dark mode only applies inside the patient portal; admin and login pages stay light.
   ngOnInit(): void {

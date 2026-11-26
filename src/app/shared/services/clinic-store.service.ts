@@ -1,107 +1,184 @@
-import { Injectable, computed, effect, signal } from '@angular/core';
-import { addDays, addMinutes, minutes, nowHHmm, to12h, todayISO } from '../utils/time';
+import { HttpClient } from '@angular/common/http';
+import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
+import { Observable, firstValueFrom } from 'rxjs';
+import { AuthService } from '../../auth/auth.service';
+import { apiError } from '../utils/api-error';
+import { ToastService } from './toast.service';
+import { addDays, addMinutes, hasStarted, minutes, nowHHmm, to12h, todayISO } from '../utils/time';
 import {
-  AdminProfile, AppointmentRecord, AppointmentStatus, ClinicDb, Doctor, NotificationAction, Patient,
-  PatientNotification, ScheduleBlock, Slot
+  AdminProfile, AppointmentRecord, AppointmentView, Availability, BookingInput, ClinicInfo, Doctor, Patient,
+  PatientInput, PatientNotification, ScheduleBlock, Slot
 } from './clinic.models';
-import { buildSeed } from './clinic.seed';
 
-const STORAGE_KEY = 'clinicflow.db.v1';
+export type { AppointmentView } from './clinic.models';
 
 export type Result = { ok: true; id?: string } | { ok: false; error: string };
 
-/** Appointment joined with its doctor and patient, ready for display. */
-export interface AppointmentView extends AppointmentRecord {
-  doctor: string;
-  specialty: string;
-  location: string;
-  patient: string;
-  start: string;   // "09:00 AM"
-  end: string;     // "09:30 AM"
+/** How often an open portal checks for changes made elsewhere (new requests, approvals…). */
+const REFRESH_MS = 20_000;
+
+/** Range of schedules loaded, in days around today (the API allows up to 370). */
+const PAST_DAYS = 90;
+const FUTURE_DAYS = 270;
+
+const EMPTY_ADMIN: AdminProfile = { fullName: '', email: '', phone: '', clinicName: '', passwordUpdatedOn: '' };
+
+interface Data {
+  admin: AdminProfile;
+  doctors: Doctor[];
+  patients: Patient[];            // admin: everyone; patient: only their own record
+  appointments: AppointmentView[];
+  availability: Availability;
+  notifications: PatientNotification[];
 }
+
+const EMPTY_DATA: Data = {
+  admin: EMPTY_ADMIN, doctors: [], patients: [], appointments: [],
+  availability: { blocks: [], busy: [] }, notifications: []
+};
+
+const slotKey = (doctorId: string, date: string, time: string) => `${doctorId}|${date}|${time}`;
 
 /**
  * Single source of truth for the whole app (admin + patient portals).
- * Mock backend: state lives in signals and is saved to localStorage, so an admin's
- * approval is visible to the patient after they log in. Swap these methods for HTTP calls later.
+ * Holds what the signed-in user may see, loaded from the API; every change is sent to the
+ * server (which enforces the rules) and the data is then reloaded.
  */
 @Injectable({ providedIn: 'root' })
 export class ClinicStore {
-  private readonly db = signal<ClinicDb>(this.load());
+  private readonly http = inject(HttpClient);
+  private readonly auth = inject(AuthService);
+  private readonly toast = inject(ToastService);
 
-  readonly admin = computed(() => this.db().admin);
-  readonly doctors = computed(() => this.db().doctors);
-  readonly activeDoctors = computed(() => this.db().doctors.filter(d => d.status === 'Active'));
-  readonly patients = computed(() => this.db().patients);
-  readonly schedules = computed(() => this.db().schedules);
-  readonly notifications = computed(() => this.db().notifications);
-  readonly specialties = computed(() => [...new Set(this.db().doctors.map(d => d.specialty))].sort());
+  private readonly data = signal<Data>(EMPTY_DATA);
 
-  /** All appointments joined with doctor/patient names, soonest first. */
-  readonly appointments = computed<AppointmentView[]>(() => {
-    const { doctors, patients, appointments } = this.db();
-    const doc = new Map(doctors.map(d => [d.id, d]));
-    const pat = new Map(patients.map(p => [p.id, p]));
-    return appointments
-      .map(a => {
-        const d = doc.get(a.doctorId);
-        return {
-          ...a,
-          doctor: d?.name ?? 'Unknown doctor',
-          specialty: d?.specialty ?? '',
-          location: `ClinicFlow · ${d?.location ?? ''}`,
-          patient: pat.get(a.patientId)?.fullName ?? 'Unknown patient',
-          start: to12h(a.time),
-          end: to12h(addMinutes(a.time, a.duration))
-        };
-      })
-      .sort((x, y) => (x.date + x.time).localeCompare(y.date + y.time));
-  });
+  readonly admin = computed(() => this.data().admin);
+  readonly doctors = computed(() => this.data().doctors);
+  readonly activeDoctors = computed(() => this.data().doctors.filter(d => d.status === 'Active'));
+  readonly patients = computed(() => this.data().patients);
+  readonly schedules = computed(() => this.data().availability.blocks);
+  readonly notifications = computed(() => this.data().notifications);
+  readonly specialties = computed(() => [...new Set(this.data().doctors.map(d => d.specialty))].sort());
+  /** All visible appointments, soonest first. */
+  readonly appointments = computed(() => this.data().appointments);
+
+  private readonly busy = computed(() =>
+    new Set(this.data().availability.busy.map(b => slotKey(b.doctorId, b.date, b.time)))
+  );
+
+  /** Public clinic name and phone. */
+  readonly clinicInfo = signal<ClinicInfo>({ name: '', phone: '' });
+
+  /** Set when the latest load failed; cleared by the next successful one. */
+  readonly loadError = signal('');
+
+  private loadedFor: string | null = null;
+  private latestRequest = 0;
 
   constructor() {
-    effect(() => {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(this.db()));
-      } catch {
-        // Storage full or blocked: keep working in memory.
-      }
+    const refreshIfOpen = () => {
+      if (this.loadedFor && this.loadedFor === this.auth.userId() && this.auth.role && !document.hidden) void this.refresh();
+    };
+    const timer = setInterval(refreshIfOpen, REFRESH_MS);
+    document.addEventListener('visibilitychange', refreshIfOpen);
+    inject(DestroyRef).onDestroy(() => {
+      clearInterval(timer);
+      document.removeEventListener('visibilitychange', refreshIfOpen);
     });
+  }
+
+  // ---------- Loading ----------
+
+  /** Loads the signed-in user's data, dropping anything left over from another account. */
+  async ensureLoaded(): Promise<void> {
+    if (this.loadedFor !== this.auth.userId()) this.data.set(EMPTY_DATA);
+    await this.refresh();
+  }
+
+  async refresh(): Promise<void> {
+    const role = this.auth.role;
+    const userId = this.auth.userId();
+    if (!role) return;
+    const request = ++this.latestRequest;
+    const today = todayISO();
+    const range = { from: addDays(today, -PAST_DAYS), to: addDays(today, FUTURE_DAYS) };
+    const get = <T>(url: string, params?: Record<string, string>) => firstValueFrom(this.http.get<T>(url, { params }));
+    const isAdmin = role === 'admin';
+
+    try {
+      const [admin, doctors, patients, appointments, availability, notifications] = await Promise.all([
+        isAdmin ? get<AdminProfile>('/api/admin/profile') : Promise.resolve(EMPTY_ADMIN),
+        get<Doctor[]>('/api/doctors'),
+        isAdmin ? get<Patient[]>('/api/patients') : get<Patient>('/api/patients/me').then(p => [p]),
+        get<AppointmentView[]>('/api/appointments'),
+        get<Availability>('/api/availability', range),
+        isAdmin ? Promise.resolve([]) : get<PatientNotification[]>('/api/notifications'),
+        this.loadClinicInfo()
+      ]);
+      // Ignore the answer if a newer load started or the user changed meanwhile.
+      if (request !== this.latestRequest || userId !== this.auth.userId()) return;
+      const next: Data = { admin, doctors, patients, appointments, availability, notifications };
+      if (this.loadedFor === userId) this.announce(this.data(), next);
+      this.data.set(next);
+      this.loadedFor = userId;
+      this.loadError.set('');
+    } catch (e) {
+      if (request === this.latestRequest) this.loadError.set(apiError(e));
+    }
+  }
+
+  /** Tells the user about things that arrived while the page was open. */
+  private announce(before: Data, after: Data): void {
+    if (this.auth.role === 'admin') {
+      const known = new Set(before.appointments.map(a => a.id));
+      const requests = after.appointments.filter(a => a.status === 'Pending' && !known.has(a.id));
+      if (requests.length === 1) this.toast.info(`New appointment request from ${requests[0].patient}.`);
+      else if (requests.length > 1) this.toast.info(`${requests.length} new appointment requests.`);
+      return;
+    }
+    const known = new Set(before.notifications.map(n => n.id));
+    // A patient's own request or reschedule is already confirmed on screen.
+    const fresh = after.notifications.filter(n => !known.has(n.id) && !n.read &&
+      n.type !== 'REQUEST' && n.type !== 'RESCHEDULE' && n.type !== 'CANCELLATION');
+    if (fresh.length === 1) this.toast.info(fresh[0].title);
+    else if (fresh.length > 1) this.toast.info(`You have ${fresh.length} new notifications.`);
+  }
+
+  /** Available without signing in (login page). */
+  async loadClinicInfo(): Promise<void> {
+    try {
+      this.clinicInfo.set(await firstValueFrom(this.http.get<ClinicInfo>('/api/clinic')));
+    } catch {
+      // Only affects the contact details shown; pages work without them.
+    }
   }
 
   // ---------- Lookups ----------
 
   doctor(id: string): Doctor | undefined {
-    return this.db().doctors.find(d => d.id === id);
+    return this.data().doctors.find(d => d.id === id);
   }
 
   patient(id: string): Patient | undefined {
-    return this.db().patients.find(p => p.id === id);
-  }
-
-  patientByEmail(email: string): Patient | undefined {
-    const e = email.trim().toLowerCase();
-    return this.db().patients.find(p => p.email.toLowerCase() === e);
+    return this.data().patients.find(p => p.id === id);
   }
 
   // ---------- Availability ----------
 
   /** Bookable slots for a doctor on a date; booked or past slots are marked unavailable. */
-  slotsFor(doctorId: string, date: string, ignoreAppointmentId?: string): Slot[] {
+  slotsFor(doctorId: string, date: string): Slot[] {
     const doctor = this.doctor(doctorId);
-    const { schedules, appointments } = this.db();
-    const taken = new Set(
-      appointments
-        .filter(a => a.doctorId === doctorId && a.date === date && a.id !== ignoreAppointmentId &&
-          (a.status === 'Pending' || a.status === 'Approved'))
-        .map(a => a.time)
-    );
+    const taken = this.busy();
     const today = todayISO();
     const now = nowHHmm();
     const slots: Slot[] = [];
-    for (const b of schedules.filter(s => s.doctorId === doctorId && s.date === date).sort((x, y) => x.start.localeCompare(y.start))) {
+    const blocks = this.schedules()
+      .filter(s => s.doctorId === doctorId && s.date === date)
+      .sort((x, y) => x.start.localeCompare(y.start));
+    for (const b of blocks) {
       for (let t = minutes(b.start); t + b.slotMinutes <= minutes(b.end); t += b.slotMinutes) {
         const time = addMinutes('00:00', t);
-        const booked = taken.has(time);
+        const booked = taken.has(slotKey(doctorId, date, time));
         const past = date < today || (date === today && time <= now);
         slots.push({
           time, end: addMinutes(time, b.slotMinutes), label: to12h(time), booked,
@@ -114,8 +191,10 @@ export class ClinicStore {
 
   /** Upcoming dates (from today) on which the doctor has at least one free slot. */
   availableDates(doctorId: string, limit = 10, horizonDays = 60): string[] {
-    const dates = [...new Set(this.db().schedules.filter(s => s.doctorId === doctorId).map(s => s.date))]
-      .filter(d => d >= todayISO() && d <= addDays(todayISO(), horizonDays))
+    const today = todayISO();
+    const last = addDays(today, horizonDays);
+    const dates = [...new Set(this.schedules().filter(s => s.doctorId === doctorId).map(s => s.date))]
+      .filter(d => d >= today && d <= last)
       .sort();
     const result: string[] = [];
     for (const d of dates) {
@@ -135,223 +214,140 @@ export class ClinicStore {
   // ---------- Appointments ----------
 
   /** Patient booking request (status Pending). */
-  requestAppointment(input: {
-    patientId: string; doctorId: string; date: string; time: string; type: string;
-    reason: string; notes?: string; firstVisit: boolean;
-  }): Result {
-    return this.createAppointment(input, 'Pending');
+  requestAppointment(input: Omit<BookingInput, 'patientId'>): Promise<Result> {
+    return this.send(this.http.post<AppointmentRecord>('/api/appointments', input), a => a.id);
   }
 
   /** Staff booking on behalf of a patient (status Approved). */
-  bookForPatient(input: {
-    patientId: string; doctorId: string; date: string; time: string; type: string;
-    reason: string; notes?: string; firstVisit: boolean;
-  }): Result {
-    return this.createAppointment(input, 'Approved');
+  bookForPatient(input: BookingInput): Promise<Result> {
+    return this.send(this.http.post<AppointmentRecord>('/api/appointments', input), a => a.id);
   }
 
-  approve(id: string, note?: string): Result {
-    return this.transition(id, ['Pending'], 'Approved', 'Approved by clinic', a => ({
-      clinicNote: note?.trim() || 'Please arrive 15 minutes before your appointment and bring a valid ID and your current medication list.'
-    }), a => this.notice(a, 'APPROVAL', 'Your appointment is approved', 'Your visit is confirmed. Please arrive 15 minutes early.',
-      { kind: 'view-appointment', appointmentId: a.id }));
+  approve(id: string, note = ''): Promise<Result> {
+    return this.changeStatus(id, 'approve', note);
   }
 
-  reject(id: string, reason: string): Result {
-    if (!reason.trim()) return { ok: false, error: 'Please give a reason so the patient knows what to do next.' };
-    return this.transition(id, ['Pending'], 'Rejected', 'Rejected by clinic', () => ({ clinicNote: reason.trim() }),
-      a => this.notice(a, 'REJECTION', 'Your appointment request was not approved', reason.trim(), { kind: 'book', doctorId: a.doctorId }));
+  reject(id: string, reason: string): Promise<Result> {
+    return this.changeStatus(id, 'reject', reason);
   }
 
-  cancel(id: string, by: 'patient' | 'clinic', reason = ''): Result {
-    const note = `Cancelled by ${by}${reason.trim() ? ': ' + reason.trim() : '.'}`;
-    return this.transition(id, ['Pending', 'Approved'], 'Cancelled', `Cancelled by ${by}`, () => ({ clinicNote: note }),
-      a => this.notice(a, 'CANCELLATION', 'Your appointment was cancelled',
-        by === 'patient' ? 'Cancelled at your request. You can book a new visit anytime.' : note,
-        { kind: 'book', doctorId: a.doctorId }));
+  /** The server records whether the patient or the clinic cancelled. */
+  cancel(id: string, reason = ''): Promise<Result> {
+    return this.changeStatus(id, 'cancel', reason);
   }
 
-  complete(id: string, visitSummary: string): Result {
-    return this.transition(id, ['Approved'], 'Completed', 'Visit completed', () => ({ visitSummary: visitSummary.trim() || undefined, clinicNote: undefined }),
-      a => this.notice(a, 'COMPLETED', 'Your visit is complete', visitSummary.trim() ? "Your doctor's notes are now available." : 'Thank you for visiting ClinicFlow.',
-        { kind: 'view-appointment', appointmentId: a.id }));
+  complete(id: string, visitSummary: string): Promise<Result> {
+    return this.changeStatus(id, 'complete', visitSummary);
+  }
+
+  markNoShow(id: string, note = ''): Promise<Result> {
+    return this.changeStatus(id, 'no-show', note);
+  }
+
+  /** Moves a visit to another free slot with the same doctor. */
+  reschedule(id: string, date: string, time: string): Promise<Result> {
+    return this.send(this.http.post(`/api/appointments/${id}/reschedule`, { date, time }));
+  }
+
+  /** Pending and approved visits with a doctor that haven't started yet. */
+  upcomingFor(doctorId: string): AppointmentView[] {
+    return this.appointments().filter(a => a.doctorId === doctorId &&
+      (a.status === 'Pending' || a.status === 'Approved') && !hasStarted(a.date, a.time));
   }
 
   // ---------- Patients ----------
 
-  registerPatient(input: { fullName: string; email: string; password: string; phone?: string; dob?: string; gender?: string; address?: string }): Result {
-    if (this.patientByEmail(input.email)) return { ok: false, error: 'An account with this email already exists.' };
-    if (input.email.trim().toLowerCase() === this.admin().email.toLowerCase()) return { ok: false, error: 'This email is not available.' };
-    const ids = this.db().patients.map(p => Number(p.id.replace('CF-', ''))).filter(n => !isNaN(n));
-    const id = `CF-${Math.max(1000, ...ids) + 1}`;
-    const patient: Patient = {
-      id, fullName: input.fullName.trim(), email: input.email.trim().toLowerCase(), password: input.password,
-      phone: input.phone?.trim() ?? '', dob: input.dob ?? '', gender: input.gender ?? '', address: input.address?.trim() ?? '',
-      registeredOn: todayISO(), status: 'Active', emailUpdates: true
-    };
-    this.update(db => ({ ...db, patients: [...db.patients, patient] }));
-    return { ok: true, id };
+  /** Front-desk registration. The server generates a temporary password for the patient. */
+  async createPatient(input: PatientInput): Promise<Result & { temporaryPassword?: string }> {
+    let temporaryPassword = '';
+    const result = await this.send(
+      this.http.post<{ patient: Patient; temporaryPassword: string }>('/api/patients', input),
+      r => { temporaryPassword = r.temporaryPassword; return r.patient.id; }
+    );
+    return { ...result, temporaryPassword };
   }
 
-  updatePatient(id: string, changes: Partial<Omit<Patient, 'id' | 'password'>>): Result {
-    if (changes.email) {
-      const other = this.patientByEmail(changes.email);
-      if (other && other.id !== id) return { ok: false, error: 'Another account already uses this email.' };
-      changes = { ...changes, email: changes.email.trim().toLowerCase() };
-    }
-    this.update(db => ({ ...db, patients: db.patients.map(p => p.id === id ? { ...p, ...changes } : p) }));
-    return { ok: true };
+  updatePatient(id: string, changes: Partial<PatientInput> & { emailUpdates?: boolean }): Promise<Result> {
+    const target = this.auth.role === 'patient' ? 'me' : id;
+    return this.send(this.http.put(`/api/patients/${target}`, changes));
+  }
+
+  setPatientStatus(id: string, status: Patient['status']): Promise<Result> {
+    return this.send(this.http.put(`/api/patients/${id}/status`, { status }));
+  }
+
+  /** Replaces a forgotten password with a temporary one. */
+  async resetPatientPassword(id: string): Promise<Result & { temporaryPassword?: string }> {
+    let temporaryPassword = '';
+    const result = await this.send(
+      this.http.post<{ temporaryPassword: string }>(`/api/patients/${id}/reset-password`, {}),
+      r => { temporaryPassword = r.temporaryPassword; return id; }
+    );
+    return { ...result, temporaryPassword };
   }
 
   // ---------- Doctors ----------
 
-  saveDoctor(doctor: Omit<Doctor, 'id'> & { id?: string }): Result {
-    if (!doctor.name.trim() || !doctor.specialty.trim()) return { ok: false, error: 'Name and specialty are required.' };
-    if (doctor.id) {
-      this.update(db => ({ ...db, doctors: db.doctors.map(d => d.id === doctor.id ? { ...d, ...doctor } as Doctor : d) }));
-      return { ok: true, id: doctor.id };
-    }
-    const base = doctor.name.toLowerCase().replace(/^dr\.?\s*/, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'doctor';
-    let id = base;
-    for (let i = 2; this.doctor(id); i++) id = `${base}-${i}`;
-    this.update(db => ({ ...db, doctors: [...db.doctors, { ...doctor, id } as Doctor] }));
-    return { ok: true, id };
+  saveDoctor(doctor: Omit<Doctor, 'id'> & { id?: string }): Promise<Result> {
+    const { id, ...fields } = doctor;
+    const body = { ...fields, experienceYears: Math.round(Number(fields.experienceYears) || 0) };
+    const request = id
+      ? this.http.put<Doctor>(`/api/doctors/${id}`, body)
+      : this.http.post<Doctor>('/api/doctors', body);
+    return this.send(request, d => d.id);
   }
 
   // ---------- Schedules ----------
 
   /** Adds availability on `date` (and the same weekday for `repeatWeeks` more weeks). Skips overlapping days. */
-  addAvailability(input: { doctorId: string; date: string; start: string; end: string; slotMinutes: number; repeatWeeks: number }): Result & { created?: number; skipped?: number } {
-    if (minutes(input.end) - minutes(input.start) < input.slotMinutes) return { ok: false, error: 'End time must be at least one slot after the start time.' };
-    if (input.date < todayISO()) return { ok: false, error: 'Choose today or a future date.' };
-    const blocks: ScheduleBlock[] = [];
-    let skipped = 0;
-    let seq = this.db().seq;
-    for (let w = 0; w <= input.repeatWeeks; w++) {
-      const date = addDays(input.date, w * 7);
-      const overlaps = this.db().schedules.some(s => s.doctorId === input.doctorId && s.date === date &&
-        minutes(s.start) < minutes(input.end) && minutes(input.start) < minutes(s.end));
-      if (overlaps) { skipped++; continue; }
-      blocks.push({ id: `SB-N${++seq}`, doctorId: input.doctorId, date, start: input.start, end: input.end, slotMinutes: input.slotMinutes });
-    }
-    if (!blocks.length) return { ok: false, error: 'These hours overlap existing availability.' };
-    this.update(db => ({ ...db, seq, schedules: [...db.schedules, ...blocks] }));
-    return { ok: true, created: blocks.length, skipped };
+  async addAvailability(input: {
+    doctorId: string; date: string; start: string; end: string; slotMinutes: number; repeatWeeks: number;
+  }): Promise<Result & { created?: number; skipped?: number }> {
+    let counts = { created: 0, skipped: 0 };
+    const result = await this.send(
+      this.http.post<typeof counts>('/api/schedules', input),
+      r => { counts = r; return undefined; }
+    );
+    return { ...result, ...counts };
   }
 
-  /** Removes a block; refuses if it has booked (pending/approved) appointments. */
-  removeAvailability(blockId: string): Result {
-    const block = this.db().schedules.find(s => s.id === blockId);
-    if (!block) return { ok: false, error: 'Block not found.' };
-    const booked = this.slotsFor(block.doctorId, block.date).filter(s => s.booked && minutes(s.time) >= minutes(block.start) && minutes(s.time) < minutes(block.end));
-    if (booked.length) return { ok: false, error: `This block has ${booked.length} booked appointment(s). Cancel or move them first.` };
-    this.update(db => ({ ...db, schedules: db.schedules.filter(s => s.id !== blockId) }));
-    return { ok: true };
+  /** Removes a block; the server refuses if it has booked (pending/approved) appointments. */
+  removeAvailability(blockId: ScheduleBlock['id']): Promise<Result> {
+    return this.send(this.http.delete(`/api/schedules/${blockId}`));
   }
 
   // ---------- Notifications ----------
 
-  markRead(id: string): void {
-    this.update(db => ({ ...db, notifications: db.notifications.map(n => n.id === id ? { ...n, read: true } : n) }));
+  markRead(id: string): Promise<Result> {
+    return this.send(this.http.post(`/api/notifications/${id}/read`, {}));
   }
 
-  markAllRead(patientId: string): void {
-    this.update(db => ({ ...db, notifications: db.notifications.map(n => n.patientId === patientId ? { ...n, read: true } : n) }));
+  markAllRead(): Promise<Result> {
+    return this.send(this.http.post('/api/notifications/read-all', {}));
   }
 
   // ---------- Admin ----------
 
-  updateAdmin(changes: Partial<AdminProfile>): void {
-    this.update(db => ({ ...db, admin: { ...db.admin, ...changes } }));
-  }
-
-  changeAdminPassword(current: string, next: string): Result {
-    if (current !== this.admin().password) return { ok: false, error: 'Current password is incorrect.' };
-    if (next.length < 8) return { ok: false, error: 'New password must be at least 8 characters.' };
-    this.updateAdmin({ password: next, passwordUpdatedOn: todayISO() });
-    return { ok: true };
-  }
-
-  /** Restores the demo data (useful while testing). */
-  resetDemoData(): void {
-    this.db.set(buildSeed());
+  updateAdmin(changes: Omit<AdminProfile, 'passwordUpdatedOn'>): Promise<Result> {
+    return this.send(this.http.put('/api/admin/profile', changes));
   }
 
   // ---------- Internals ----------
 
-  private createAppointment(input: {
-    patientId: string; doctorId: string; date: string; time: string; type: string;
-    reason: string; notes?: string; firstVisit: boolean;
-  }, status: 'Pending' | 'Approved'): Result {
-    const patient = this.patient(input.patientId);
-    if (!patient || patient.status !== 'Active') return { ok: false, error: 'This patient account is not active.' };
-    const slot = this.slotsFor(input.doctorId, input.date).find(s => s.time === input.time);
-    if (!slot) return { ok: false, error: 'This time is not part of the doctor’s schedule.' };
-    if (!slot.available) return { ok: false, error: 'This time is no longer available. Please choose another time.' };
-
-    const now = new Date().toISOString();
-    const seq = this.db().seq + 1;
-    const record: AppointmentRecord = {
-      id: `APT-${seq}`, patientId: input.patientId, doctorId: input.doctorId, date: input.date, time: input.time,
-      duration: minutes(slot.end) - minutes(slot.time), type: input.type, reason: input.reason.trim(),
-      notes: input.notes?.trim() || undefined, firstVisit: input.firstVisit, status, requestedOn: now,
-      clinicNote: status === 'Pending'
-        ? 'Your request is awaiting clinic review. You will be notified once it is approved.'
-        : 'Please arrive 15 minutes before your appointment and bring a valid ID and your current medication list.',
-      history: status === 'Pending'
-        ? [{ label: 'Request sent', date: now }]
-        : [{ label: 'Booked by clinic', date: now }]
-    };
-    this.update(db => ({ ...db, seq, appointments: [...db.appointments, record] }));
-    this.notice(record, status === 'Pending' ? 'REQUEST' : 'APPROVAL',
-      status === 'Pending' ? 'Appointment request sent' : 'An appointment was booked for you',
-      status === 'Pending' ? 'The clinic will review your request shortly.' : 'Your visit is confirmed. Please arrive 15 minutes early.',
-      { kind: 'view-appointment', appointmentId: record.id });
-    return { ok: true, id: record.id };
+  private changeStatus(id: string, action: 'approve' | 'reject' | 'cancel' | 'complete' | 'no-show', text: string): Promise<Result> {
+    return this.send(this.http.post(`/api/appointments/${id}/${action}`, { text }));
   }
 
-  private transition(
-    id: string, from: AppointmentStatus[], to: AppointmentStatus, label: string,
-    changes: (a: AppointmentRecord) => Partial<AppointmentRecord>,
-    after: (a: AppointmentRecord) => void
-  ): Result {
-    const current = this.db().appointments.find(a => a.id === id);
-    if (!current) return { ok: false, error: 'Appointment not found.' };
-    if (!from.includes(current.status)) return { ok: false, error: `A ${current.status.toLowerCase()} appointment can’t be ${to.toLowerCase()}.` };
-    const updated: AppointmentRecord = {
-      ...current, ...changes(current), status: to,
-      history: [...current.history, { label, date: new Date().toISOString() }]
-    };
-    this.update(db => ({ ...db, appointments: db.appointments.map(a => a.id === id ? updated : a) }));
-    after(updated);
-    return { ok: true, id };
-  }
-
-  private notice(a: AppointmentRecord, type: string, title: string, message: string, action: NotificationAction): void {
-    const doctor = this.doctor(a.doctorId);
-    const n: PatientNotification = {
-      id: `N-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-      patientId: a.patientId, type, title, message, action, read: false,
-      subtitle: `${doctor?.name ?? ''} · ${a.date} · ${to12h(a.time)}`,
-      createdAt: new Date().toISOString()
-    };
-    this.update(db => ({ ...db, notifications: [n, ...db.notifications] }));
-  }
-
-  private update(fn: (db: ClinicDb) => ClinicDb): void {
-    this.db.update(fn);
-  }
-
-  private load(): ClinicDb {
+  /** Sends a change, then reloads so the screen matches the database (also after a refusal). */
+  private async send<T>(request: Observable<T>, id?: (response: T) => string | undefined): Promise<Result> {
+    let result: Result;
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw) as ClinicDb;
-        if (parsed?.version === 1 && Array.isArray(parsed.appointments)) return parsed;
-      }
-    } catch {
-      // Corrupt or unavailable storage: fall back to demo data.
+      const response = await firstValueFrom(request);
+      result = { ok: true, id: id?.(response) };
+    } catch (e) {
+      result = { ok: false, error: apiError(e) };
     }
-    return buildSeed();
+    await this.refresh();
+    return result;
   }
 }

@@ -1,4 +1,5 @@
-import { Component, HostListener, computed, inject, signal } from '@angular/core';
+import { ToastService } from '../../shared/services/toast.service';
+import { ChangeDetectorRef, Component, HostListener, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -18,6 +19,8 @@ type DoctorForm = Omit<Doctor, 'id'> & { id?: string };
 })
 export class Doctors {
   readonly clinic = inject(ClinicStore);
+  private readonly toast = inject(ToastService);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   readonly search = signal('');
   readonly specialty = signal('');
@@ -26,7 +29,7 @@ export class Doctors {
   editing: DoctorForm | null = null;
   formSubmitted = false;
   formError = '';
-  message = '';
+  saving = false;
 
   /** Today's working hours per doctor, from the schedule. */
   private readonly hoursToday = computed(() => {
@@ -65,7 +68,7 @@ export class Doctors {
   openAdd() {
     this.editing = {
       name: 'Dr. ', specialty: '', title: '', email: '', phone: '', experienceYears: 0,
-      languages: 'English', location: '', bio: '', status: 'Active'
+      languages: '', location: '', bio: '', status: 'Active'
     };
     this.formSubmitted = false;
     this.formError = '';
@@ -77,25 +80,47 @@ export class Doctors {
     this.formError = '';
   }
 
-  save(f: NgForm) {
+  async save(f: NgForm) {
     this.formSubmitted = true;
     this.formError = '';
-    if (!this.editing || f.invalid) return;
-    const isNew = !this.editing.id;
-    const r = this.clinic.saveDoctor({ ...this.editing, name: this.editing.name.trim(), specialty: this.editing.specialty.trim() });
-    if (!r.ok) { this.formError = r.error; return; }
-    this.message = isNew
-      ? `${this.editing.name} added. Add their working hours under Schedules so patients can book.`
-      : `${this.editing.name} updated.`;
-    this.editing = null;
+    if (!this.editing || f.invalid || this.saving) return;
+    const doctor = { ...this.editing, name: this.editing.name.trim(), specialty: this.editing.specialty.trim() };
+    const goingOnLeave = doctor.status === 'On leave' && !!doctor.id && this.clinic.doctor(doctor.id)?.status === 'Active';
+    if (goingOnLeave && !this.confirmLeave(doctor.id!, doctor.name)) return;
+    this.saving = true;
+    const r = await this.clinic.saveDoctor(doctor);
+    if (r.ok) {
+      this.toast.success(doctor.id
+        ? `${doctor.name} updated.`
+        : `${doctor.name} added. Add their working hours under Schedules so patients can book.`);
+      this.editing = null;
+    } else {
+      this.formError = r.error;
+    }
+    this.saving = false;
+    this.cdr.markForCheck();
   }
 
-  toggleLeave(d: Doctor) {
+  async toggleLeave(d: Doctor) {
     const status = d.status === 'Active' ? 'On leave' : 'Active';
-    this.clinic.saveDoctor({ ...d, status });
-    this.message = status === 'On leave'
-      ? `${d.name} is on leave and hidden from booking. Existing appointments are unchanged.`
-      : `${d.name} is available for booking again.`;
+    if (status === 'On leave' && !this.confirmLeave(d.id, d.name)) return;
+    const r = await this.clinic.saveDoctor({ ...d, status });
+    if (!r.ok) this.toast.error(r.error);
+    else this.toast.success(status === 'On leave'
+      ? `${d.name} is on leave and hidden from booking. Affected patients have been notified.`
+      : `${d.name} is available for booking again.`);
+    this.cdr.markForCheck();
+  }
+
+  /** Warns about the visits affected before a doctor is put on leave. */
+  private confirmLeave(id: string, name: string): boolean {
+    const upcoming = this.clinic.upcomingFor(id);
+    const list = upcoming.slice(0, 5).map(a => `• ${a.date} ${a.start} ${a.patient}`).join('\n');
+    const affected = upcoming.length
+      ? `${upcoming.length} upcoming appointment(s) are affected and those patients will be notified:\n${list}` +
+        (upcoming.length > 5 ? '\n…' : '') + '\nThe appointments are kept, so reschedule or cancel them as needed.'
+      : 'There are no upcoming appointments.';
+    return confirm(`Set ${name} on leave?\n\n${affected}`);
   }
 
   exportCsv() {

@@ -1,7 +1,8 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { LucideDynamicIcon, LucideChevronDown, LucideMoon, LucideSun, LucideBell } from '@lucide/angular';
+import { LucideDynamicIcon, LucideChevronDown, LucideMoon, LucideSun, LucideBell, LucideMenu } from '@lucide/angular';
+import { MenuService } from '../../services/menu.service';
 import { ThemeService } from '../../services/theme.service';
 import { PatientAppointmentsService } from '../../services/patient-appointments.service';
 
@@ -13,6 +14,8 @@ import { PatientAppointmentsService } from '../../services/patient-appointments.
   styleUrls: ['./patient-navbar.css']
 })
 export class PatientNavbarComponent {
+  readonly MenuIcon = LucideMenu;
+  readonly menu = inject(MenuService);
   readonly ChevronDownIcon = LucideChevronDown;
   readonly SunIcon = LucideSun;
   readonly MoonIcon = LucideMoon;

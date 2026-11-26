@@ -15,8 +15,6 @@
   }
 </div>
 
-@if (message) { <p class="cf-alert cf-alert-success page-message" role="status">{{ message }}</p> }
-
 <!-- Main Container -->
 <div class="section-container">
 
@@ -72,7 +70,7 @@
               <div class="actions-cell">
                 @switch (appt.status) {
                   @case ('Pending') {
-                    <button type="button" class="link-btn approve" (click)="approve(appt)">Approve</button> /
+                    <button type="button" class="link-btn approve" [disabled]="!!approving" [class.is-busy]="approving === appt.id" (click)="approve(appt)">Approve</button> /
                     <button type="button" class="link-btn" (click)="ui.review(appt.id)">Review</button>
                   }
                   @case ('Approved') {

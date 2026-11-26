@@ -27,7 +27,7 @@
       <!-- Phone -->
       <div class="form-group">
         <label for="phone">Phone number</label>
-        <input type="tel" id="phone" name="phone" placeholder="+1 (555) 000-0000"
+        <input type="tel" id="phone" name="phone" placeholder="Your phone number"
                [(ngModel)]="form.phone" required #phone="ngModel" autocomplete="tel" />
         @if (submitted && phone.invalid) { <small class="field-error">Phone number is required so the clinic can reach you.</small> }
       </div>
@@ -90,7 +90,7 @@
       @if (error) { <p class="signup-error" role="alert">{{ error }}</p> }
 
       <!-- Create Account (creates the patient record and signs in) -->
-      <button type="submit" class="signup-button">
+      <button type="submit" class="signup-button" [disabled]="busy" [class.is-busy]="busy">
         Create account
       </button>
 

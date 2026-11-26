@@ -1,15 +1,17 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
+import { ClinicStore } from '../shared/services/clinic-store.service';
 import { AuthService, UserRole } from './auth.service';
 
 /**
- * Allows the route only for the given role.
+ * Allows the route only for the given role, and loads that user's data before showing it.
  * Logged-out users go to /login; users with another role go to their own dashboard.
  */
 export function roleGuard(allowed: UserRole): CanActivateFn {
-  return () => {
+  return async () => {
     const auth = inject(AuthService);
     const router = inject(Router);
+    const store = inject(ClinicStore);
     const role = auth.role;
 
     if (!role) {
@@ -18,7 +20,9 @@ export function roleGuard(allowed: UserRole): CanActivateFn {
     if (role !== allowed) {
       return router.parseUrl(auth.homeFor(role));
     }
-    return true;
+    await store.ensureLoaded();
+    // The server may have rejected the session while loading.
+    return auth.role ? true : router.parseUrl('/login');
   };
 }
 

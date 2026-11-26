@@ -1,3 +1,4 @@
+import { ToastService } from '../../shared/services/toast.service';
 import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
@@ -20,6 +21,7 @@ export class Notifications {
   private readonly router = inject(Router);
   private readonly booking = inject(BookingModalService);
   private readonly clinic = inject(ClinicStore);
+  private readonly toast = inject(ToastService);
   readonly mine = inject(PatientAppointmentsService);
 
   readonly activeTab = signal<'all' | 'unread'>('all');
@@ -33,7 +35,10 @@ export class Notifications {
   }
 
   markAllAsRead() {
-    this.clinic.markAllRead(this.mine.patient.id);
+    void this.clinic.markAllRead().then(r => {
+      if (r.ok) this.toast.success('All notifications marked as read.');
+      else this.toast.error(r.error);
+    });
   }
 
   label(n: PatientNotification): string {
@@ -46,7 +51,7 @@ export class Notifications {
 
   /** Runs a notification's action and marks it as read. */
   open(n: PatientNotification) {
-    this.clinic.markRead(n.id);
+    if (!n.read) void this.clinic.markRead(n.id);
     const action = n.action;
     switch (action.kind) {
       case 'view-appointment':

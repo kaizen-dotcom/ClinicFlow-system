@@ -96,6 +96,95 @@ public class ClinicServiceTests
         Assert.True(slot.Available);
     }
 
+    /// <summary>The nth free slot on the first available date that is after today.</summary>
+    private static async Task<(string Date, string Time)> LaterSlot(ClinicService clinic, int n, string doctorId = "sophia-lee")
+    {
+        var date = (await clinic.GetAvailableDatesAsync(doctorId, 10)).Last();
+        var slot = (await clinic.GetSlotsAsync(doctorId, DateOnly.Parse(date))).Where(s => s.Available).ElementAt(n);
+        return (date, slot.Time);
+    }
+
+    [Fact]
+    public async Task Patient_cannot_book_two_visits_at_the_same_time()
+    {
+        var (_, clinic, _) = await TestDb.CreateAsync();
+        var (date, time) = await LaterSlot(clinic, 0);
+        Assert.True((await clinic.CreateAppointmentAsync("CF-1025", Request(date, time, "sophia-lee"), false)).Ok);
+
+        var clash = await clinic.CreateAppointmentAsync("CF-1025", Request(date, time, "amelia-brooks"), false);
+        Assert.Equal(409, clash.Code);
+        Assert.Contains("already have an appointment", clash.Error);
+    }
+
+    [Fact]
+    public async Task Pending_requests_are_limited_for_patients_but_not_staff()
+    {
+        var (db, clinic, _) = await TestDb.CreateAsync();
+        var already = await db.Appointments.CountAsync(a => a.PatientId == "CF-1027" && a.Status == AppointmentStatus.Pending);
+        for (var i = already; i < ClinicService.MaxPendingRequests; i++)
+        {
+            var (d, t) = await LaterSlot(clinic, i);
+            Assert.True((await clinic.CreateAppointmentAsync("CF-1027", Request(d, t, "sophia-lee"), false)).Ok);
+        }
+        var (date, time) = await LaterSlot(clinic, 0);
+        var over = await clinic.CreateAppointmentAsync("CF-1027", Request(date, time, "sophia-lee"), false);
+        Assert.Contains("waiting for review", over.Error);
+        Assert.True((await clinic.CreateAppointmentAsync("CF-1027", Request(date, time, "sophia-lee"), true)).Ok);
+    }
+
+    [Fact]
+    public async Task Visits_can_only_be_completed_or_missed_after_they_start()
+    {
+        var (_, clinic, clock) = await TestDb.CreateAsync();
+        var (date, time) = await LaterSlot(clinic, 0);
+        var a = (await clinic.CreateAppointmentAsync("CF-1025", Request(date, time, "sophia-lee"), true)).Value!;
+        Assert.Equal(409, (await clinic.CompleteAsync(a.Id, null)).Code);
+        Assert.Equal(409, (await clinic.MarkNoShowAsync(a.Id, null)).Code);
+
+        clock.Now = new DateTimeOffset(a.Date.ToDateTime(a.Time).AddMinutes(1), TimeSpan.Zero);
+        Assert.False((await clinic.CancelAsync(a.Id, byPatient: true, null)).Ok);
+        var missed = await clinic.MarkNoShowAsync(a.Id, null);
+        Assert.True(missed.Ok, missed.Error);
+        Assert.Equal(AppointmentStatus.NoShow, missed.Value!.Status);
+        Assert.Null(missed.Value.ActiveSlotKey);
+    }
+
+    [Fact]
+    public async Task Unreviewed_requests_expire_and_cannot_be_approved()
+    {
+        var (db, clinic, clock) = await TestDb.CreateAsync();
+        var (date, time) = await LaterSlot(clinic, 0);
+        var a = (await clinic.CreateAppointmentAsync("CF-1025", Request(date, time, "sophia-lee"), false)).Value!;
+        clock.Now = new DateTimeOffset(a.Date.ToDateTime(a.Time).AddMinutes(1), TimeSpan.Zero);
+        db.ChangeTracker.Clear();
+
+        Assert.Equal(409, (await clinic.ApproveAsync(a.Id, null)).Code);
+        Assert.True(await clinic.ExpireStaleRequestsAsync() >= 1);
+        Assert.Equal(AppointmentStatus.Expired, (await db.Appointments.AsNoTracking().SingleAsync(x => x.Id == a.Id)).Status);
+        Assert.True(await db.Notifications.AnyAsync(n => n.PatientId == "CF-1025" && n.Type == "EXPIRED"));
+        Assert.Equal(0, await clinic.ExpireStaleRequestsAsync());
+    }
+
+    [Fact]
+    public async Task Reschedule_frees_the_old_slot_and_patient_changes_need_review()
+    {
+        var (_, clinic, _) = await TestDb.CreateAsync();
+        var (date, first) = await LaterSlot(clinic, 0);
+        var (_, second) = await LaterSlot(clinic, 1);
+        var a = (await clinic.CreateAppointmentAsync("CF-1025", Request(date, first, "sophia-lee"), true)).Value!;
+
+        var moved = await clinic.RescheduleAsync(a.Id, new RescheduleRequest(date, second), byStaff: false);
+        Assert.True(moved.Ok, moved.Error);
+        Assert.Equal(AppointmentStatus.Pending, moved.Value!.Status);
+        var slots = await clinic.GetSlotsAsync("sophia-lee", DateOnly.Parse(date));
+        Assert.True(slots.Single(s => s.Time == first).Available);
+        Assert.False(slots.Single(s => s.Time == second).Available);
+
+        var back = await clinic.RescheduleAsync(a.Id, new RescheduleRequest(date, first), byStaff: true);
+        Assert.Equal(AppointmentStatus.Approved, back.Value!.Status);
+        Assert.Equal(409, (await clinic.RescheduleAsync(a.Id, new RescheduleRequest(date, first), true)).Code);
+    }
+
     [Fact]
     public async Task Availability_skips_overlaps_and_booked_blocks_cannot_be_removed()
     {
@@ -132,6 +221,6 @@ public class ClinicServiceTests
         Assert.NotEqual("Secret123", r.Value.PasswordHash);
 
         Assert.False((await clinic.RegisterPatientAsync("Dup", "ana@example.com", "Secret123", "1", null, null, null)).Ok);
-        Assert.False((await clinic.RegisterPatientAsync("Dup", DemoSeeder.AdminEmail, "Secret123", "1", null, null, null)).Ok);
+        Assert.False((await clinic.RegisterPatientAsync("Dup", TestData.AdminEmail, "Secret123", "1", null, null, null)).Ok);
     }
 }

@@ -15,8 +15,6 @@
   }
 </div>
 
-@if (message) { <p class="cf-alert cf-alert-success dash-message" role="status">{{ message }}</p> }
-
 <!-- 2. Pending Requests Section -->
 <div class="section-container">
   <div class="section-header">
@@ -43,7 +41,7 @@
             <td class="text-muted">{{ req.doctor }}</td>
             <td class="text-muted">{{ req.date | date: 'd MMM' }} · {{ req.start }}</td>
             <td>
-              <button type="button" class="link-btn approve" (click)="approve(req.id)">Approve</button> /
+              <button type="button" class="link-btn approve" [disabled]="!!approving" [class.is-busy]="approving === req.id" (click)="approve(req.id)">Approve</button> /
               <button type="button" class="link-btn" (click)="ui.review(req.id)">Review</button>
             </td>
           </tr>
@@ -112,5 +110,7 @@
       </span>
       <span class="activity-time">{{ act.date | date: 'd MMM, h:mm a' }}</span>
     </div>
+  } @empty {
+    <p class="cf-empty">No activity yet.</p>
   }
 </div>

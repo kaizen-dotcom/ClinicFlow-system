@@ -44,7 +44,7 @@
       <p class="footer-note">
         @if (accountError) { <span class="cf-error">{{ accountError }}</span> }
         @else if (accountMessage) { <span class="saved">{{ accountMessage }}</span> }
-        @else { Changes apply to your administrator account. }
+        @else { Patients see the clinic name and phone number. }
       </p>
       <div class="footer-actions">
         <button type="button" class="btn-outline" (click)="cancel(accountForm)" [disabled]="accountForm.pristine">Cancel</button>
@@ -58,45 +58,7 @@
     <h2>Security</h2>
     <p class="section-subtitle">Password last updated {{ clinic.admin().passwordUpdatedOn | date: 'd MMMM y' }}.</p>
 
-    @if (passwordMessage) { <p class="cf-alert cf-alert-success" role="status">{{ passwordMessage }}</p> }
-
-    @if (!showPasswordForm) {
-      <button type="button" class="btn-outline" (click)="showPasswordForm = true; passwordMessage = ''">Change password</button>
-    } @else {
-      <form class="password-form" (ngSubmit)="changePassword()">
-        <div class="form-group">
-          <label for="pw-current">Current password</label>
-          <input id="pw-current" type="password" class="form-control" name="current" [(ngModel)]="password.current" autocomplete="current-password">
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label for="pw-next">New password</label>
-            <input id="pw-next" type="password" class="form-control" name="next" [(ngModel)]="password.next" autocomplete="new-password">
-            <span class="helper-text">At least 8 characters.</span>
-          </div>
-          <div class="form-group">
-            <label for="pw-confirm">Confirm new password</label>
-            <input id="pw-confirm" type="password" class="form-control" name="confirm" [(ngModel)]="password.confirm" autocomplete="new-password">
-          </div>
-        </div>
-        @if (passwordError) { <p class="cf-alert cf-alert-error" role="alert">{{ passwordError }}</p> }
-        <div class="footer-actions">
-          <button type="button" class="btn-outline" (click)="showPasswordForm = false; passwordError = ''">Cancel</button>
-          <button type="submit" class="btn-primary">Update password</button>
-        </div>
-      </form>
-    }
-  </div>
-
-  <!-- Demo data -->
-  <div class="section-card">
-    <h2>Demo data</h2>
-    <p class="section-subtitle">
-      Until the backend is connected, all data is stored in this browser. Resetting restores the sample doctors,
-      patients, schedules and appointments.
-    </p>
-    @if (resetMessage) { <p class="cf-alert cf-alert-success" role="status">{{ resetMessage }}</p> }
-    <button type="button" class="btn-outline" (click)="resetDemo()">Reset demo data</button>
+    <app-change-password (changed)="clinic.refresh()" />
   </div>
 
 </div>

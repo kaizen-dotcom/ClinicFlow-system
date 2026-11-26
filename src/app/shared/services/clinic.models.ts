@@ -1,5 +1,6 @@
-export type AppointmentStatus = 'Pending' | 'Approved' | 'Rejected' | 'Cancelled' | 'Completed';
-export const APPOINTMENT_STATUSES: AppointmentStatus[] = ['Pending', 'Approved', 'Completed', 'Rejected', 'Cancelled'];
+export type AppointmentStatus = 'Pending' | 'Approved' | 'Rejected' | 'Cancelled' | 'Completed' | 'No-show' | 'Expired';
+export const APPOINTMENT_STATUSES: AppointmentStatus[] =
+  ['Pending', 'Approved', 'Completed', 'No-show', 'Rejected', 'Cancelled', 'Expired'];
 
 export interface Doctor {
   id: string;
@@ -25,7 +26,6 @@ export interface Patient {
   address: string;
   registeredOn: string;  // ISO date
   status: 'Active' | 'Inactive';
-  password: string;      // mock only — real passwords belong on the backend, hashed
   emailUpdates: boolean;
 }
 
@@ -52,9 +52,19 @@ export interface AppointmentRecord {
   history: StatusEvent[];
 }
 
+/** Appointment with its doctor and patient names, as returned by the API. */
+export interface AppointmentView extends AppointmentRecord {
+  doctor: string;
+  specialty: string;
+  location: string;
+  patient: string;
+  start: string;         // "09:00 AM"
+  end: string;           // "09:30 AM"
+}
+
 /** A doctor's bookable availability on one date, split into equal slots. */
 export interface ScheduleBlock {
-  id: string;
+  id: number;
   doctorId: string;
   date: string;          // ISO date
   start: string;         // "HH:mm"
@@ -83,7 +93,6 @@ export interface AdminProfile {
   fullName: string;
   email: string;
   phone: string;
-  password: string;      // mock only
   clinicName: string;
   passwordUpdatedOn: string;
 }
@@ -96,15 +105,29 @@ export interface Slot {
   booked: boolean;
 }
 
-export interface ClinicDb {
-  version: number;
-  seq: number;
-  admin: AdminProfile;
-  doctors: Doctor[];
-  patients: Patient[];
-  appointments: AppointmentRecord[];
-  schedules: ScheduleBlock[];
-  notifications: PatientNotification[];
+/** Schedule blocks plus the times already taken (without patient details). */
+export interface Availability {
+  blocks: ScheduleBlock[];
+  busy: { doctorId: string; date: string; time: string }[];
+}
+
+/** Public clinic contact details. */
+export interface ClinicInfo {
+  name: string;
+  phone: string;
+}
+
+export type PatientInput = Pick<Patient, 'fullName' | 'email' | 'phone' | 'dob' | 'gender' | 'address'>;
+
+export interface BookingInput {
+  patientId: string;
+  doctorId: string;
+  date: string;
+  time: string;
+  type: string;
+  reason: string;
+  notes?: string;
+  firstVisit: boolean;
 }
 
 export const APPOINTMENT_TYPES = [
@@ -113,5 +136,3 @@ export const APPOINTMENT_TYPES = [
   'Specialist consultation',
   'Routine check-up'
 ];
-
-export const CLINIC_ADDRESS = 'ClinicFlow Medical Center · 120 Wellness Avenue';

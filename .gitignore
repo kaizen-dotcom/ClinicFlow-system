@@ -39,6 +39,9 @@ testem.log
 /typings
 __screenshots__/
 
+# Local HTTPS certificate and private key (create with: npm run cert)
+/.cert
+
 # System files
 .DS_Store
 Thumbs.db

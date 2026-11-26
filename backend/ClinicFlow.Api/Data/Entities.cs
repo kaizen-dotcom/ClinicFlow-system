@@ -1,6 +1,6 @@
 namespace ClinicFlow.Api.Data;
 
-public enum AppointmentStatus { Pending, Approved, Rejected, Cancelled, Completed }
+public enum AppointmentStatus { Pending, Approved, Rejected, Cancelled, Completed, NoShow, Expired }
 public enum PatientStatus { Active, Inactive }
 public enum DoctorStatus { Active, OnLeave }
 

@@ -9,7 +9,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ClinicFlow.Api.Controllers;
 
-public class AuthController(ClinicDbContext db, ClinicService clinic, TokenService tokens, IPasswordHasher<object> hasher) : ApiControllerBase
+public class AuthController(ClinicDbContext db, ClinicService clinic, TokenService tokens, IPasswordHasher<object> hasher,
+    TimeProvider clock) : ApiControllerBase
 {
     private const string InvalidLogin = "Incorrect email or password.";
 
@@ -27,7 +28,7 @@ public class AuthController(ClinicDbContext db, ClinicService clinic, TokenServi
             if (!Verify(admin.PasswordHash, req.Password, () => admin.PasswordHash = hasher.HashPassword(null!, req.Password)))
                 return Error(InvalidLogin, 401);
             await db.SaveChangesAsync(ct);
-            return Issue("admin", Roles.Admin, admin.Email);
+            return Issue("admin", Roles.Admin, admin.Email, admin.PasswordHash);
         }
 
         var patient = await db.Patients.FirstOrDefaultAsync(p => p.Email == email, ct);
@@ -36,7 +37,7 @@ public class AuthController(ClinicDbContext db, ClinicService clinic, TokenServi
         if (patient.Status != PatientStatus.Active)
             return Error("This account is inactive. Please contact the clinic.", 403);
         await db.SaveChangesAsync(ct);
-        return Issue(patient.Id, Roles.Patient, patient.Email);
+        return Issue(patient.Id, Roles.Patient, patient.Email, patient.PasswordHash);
     }
 
     /// <summary>Patient self-registration; returns a token so the patient is signed in.</summary>
@@ -49,7 +50,36 @@ public class AuthController(ClinicDbContext db, ClinicService clinic, TokenServi
             return Error("Enter a valid date of birth.");
         var r = await clinic.RegisterPatientAsync(req.FullName, req.Email, req.Password, req.Phone, dob, null, null, ct);
         if (!r.Ok) return Fail(r);
-        return Issue(r.Value!.Id, Roles.Patient, r.Value.Email);
+        return Issue(r.Value!.Id, Roles.Patient, r.Value.Email, r.Value.PasswordHash);
+    }
+
+    /// <summary>
+    /// Changes the signed-in user's password. Other sessions are signed out; the response carries a new token
+    /// for this one.
+    /// </summary>
+    [HttpPost("password")]
+    [Authorize]
+    [EnableRateLimiting("auth")]
+    public async Task<ActionResult<AuthResponse>> ChangePassword(ChangePasswordRequest req, CancellationToken ct)
+    {
+        if (req.Next == req.Current) return Error("Choose a password different from the current one.");
+
+        if (User.IsAdmin())
+        {
+            var admin = await db.Admins.OrderBy(a => a.Id).FirstAsync(ct);
+            if (!Verify(admin.PasswordHash, req.Current, () => { })) return Error("Current password is incorrect.");
+            admin.PasswordHash = hasher.HashPassword(null!, req.Next);
+            admin.PasswordUpdatedOn = DateOnly.FromDateTime(clock.GetLocalNow().DateTime);
+            await db.SaveChangesAsync(ct);
+            return Issue("admin", Roles.Admin, admin.Email, admin.PasswordHash);
+        }
+
+        var me = User.UserId();
+        var patient = await db.Patients.FirstAsync(p => p.Id == me, ct);
+        if (!Verify(patient.PasswordHash, req.Current, () => { })) return Error("Current password is incorrect.");
+        patient.PasswordHash = hasher.HashPassword(null!, req.Next);
+        await db.SaveChangesAsync(ct);
+        return Issue(patient.Id, Roles.Patient, patient.Email, patient.PasswordHash);
     }
 
     private bool Verify(string hash, string password, Action rehash)
@@ -59,9 +89,9 @@ public class AuthController(ClinicDbContext db, ClinicService clinic, TokenServi
         return result != PasswordVerificationResult.Failed;
     }
 
-    private ActionResult<AuthResponse> Issue(string userId, string role, string email)
+    private ActionResult<AuthResponse> Issue(string userId, string role, string email, string passwordHash)
     {
-        var (token, expires) = tokens.Create(userId, role, email);
+        var (token, expires) = tokens.Create(userId, role, email, passwordHash);
         return new AuthResponse(token, role.ToLowerInvariant(), userId, expires);
     }
 }

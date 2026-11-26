@@ -3,13 +3,14 @@ using ClinicFlow.Api.Data;
 using ClinicFlow.Api.Dtos;
 using ClinicFlow.Api.Services;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace ClinicFlow.Api.Controllers;
 
 [Authorize]
-public class PatientsController(ClinicDbContext db, ClinicService clinic) : ApiControllerBase
+public class PatientsController(ClinicDbContext db, ClinicService clinic, IPasswordHasher<object> hasher) : ApiControllerBase
 {
     [HttpGet]
     [Authorize(Roles = Roles.Admin)]
@@ -47,11 +48,26 @@ public class PatientsController(ClinicDbContext db, ClinicService clinic) : ApiC
     public async Task<ActionResult<CreatePatientResponse>> Create(CreatePatientRequest req, CancellationToken ct)
     {
         if (!Mapping.TryParseDate(req.Dob, out var dob)) return Error("Enter a valid date of birth.");
-        var temporary = "Cf-" + Convert.ToHexString(RandomNumberGenerator.GetBytes(4)) + "!";
+        var temporary = NewTemporaryPassword();
         var r = await clinic.RegisterPatientAsync(req.FullName, req.Email, temporary, req.Phone, dob, req.Gender, req.Address, ct);
         if (!r.Ok) return Fail(r);
         return CreatedAtAction(nameof(Get), new { id = r.Value!.Id }, new CreatePatientResponse(r.Value.ToDto(), temporary));
     }
+
+    /// <summary>For a patient who forgot their password: sets a new temporary one and signs them out.</summary>
+    [HttpPost("{id}/reset-password")]
+    [Authorize(Roles = Roles.Admin)]
+    public async Task<ActionResult<TemporaryPasswordResponse>> ResetPassword(string id, CancellationToken ct)
+    {
+        var p = await db.Patients.FirstOrDefaultAsync(x => x.Id == id, ct);
+        if (p is null) return Error("Patient not found.", 404);
+        var temporary = NewTemporaryPassword();
+        p.PasswordHash = hasher.HashPassword(null!, temporary);
+        await db.SaveChangesAsync(ct);
+        return new TemporaryPasswordResponse(temporary);
+    }
+
+    private static string NewTemporaryPassword() => "Cf-" + Convert.ToHexString(RandomNumberGenerator.GetBytes(4)) + "!";
 
     [HttpPut("{id}/status")]
     [Authorize(Roles = Roles.Admin)]

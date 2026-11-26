@@ -1,4 +1,5 @@
-import { Component, HostListener, computed, effect, inject, untracked } from '@angular/core';
+import { ToastService } from '../../services/toast.service';
+import { ChangeDetectorRef, Component, HostListener, computed, effect, inject, untracked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
 import { AdminUiService } from '../../services/admin-ui.service';
@@ -15,6 +16,8 @@ import { APPOINTMENT_TYPES, Slot } from '../../services/clinic.models';
 export class AdminNewAppointmentModal {
   readonly ui = inject(AdminUiService);
   readonly clinic = inject(ClinicStore);
+  private readonly toast = inject(ToastService);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   readonly types = APPOINTMENT_TYPES;
   readonly activePatients = computed(() =>
@@ -27,6 +30,7 @@ export class AdminNewAppointmentModal {
   submitted = false;
   error = '';
   createdId = '';
+  busy = false;
 
   constructor() {
     effect(() => {
@@ -55,20 +59,24 @@ export class AdminNewAppointmentModal {
     this.slots = date ? this.clinic.slotsFor(this.form.doctorId, date) : [];
   }
 
-  submit(f: NgForm): void {
+  async submit(f: NgForm): Promise<void> {
     this.submitted = true;
     this.error = '';
-    if (f.invalid || !this.form.date || !this.form.time) return;
-    const result = this.clinic.bookForPatient({
+    if (this.busy || f.invalid || !this.form.date || !this.form.time) return;
+    this.busy = true;
+    const result = await this.clinic.bookForPatient({
       patientId: this.form.patientId, doctorId: this.form.doctorId, date: this.form.date, time: this.form.time,
       type: this.form.type, reason: this.form.reason, notes: this.form.notes, firstVisit: this.form.firstVisit
     });
+    this.busy = false;
+    this.cdr.markForCheck();
     if (!result.ok) {
       this.error = result.error;
       this.selectDate(this.form.date);
       return;
     }
     this.createdId = result.id ?? '';
+    this.toast.success('Appointment booked. The patient has been notified.');
   }
 
   openCreated(): void {

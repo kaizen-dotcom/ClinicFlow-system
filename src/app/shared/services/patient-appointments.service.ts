@@ -1,14 +1,14 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { AuthService } from '../../auth/auth.service';
 import { AppointmentView, ClinicStore, Result } from './clinic-store.service';
-import { Patient } from './clinic.models';
+import { Patient, PatientInput } from './clinic.models';
 
 export type { AppointmentStatus, StatusEvent } from './clinic.models';
 export type Appointment = AppointmentView;
 
 const EMPTY_PATIENT: Patient = {
   id: '', fullName: '', email: '', phone: '', dob: '', gender: '', address: '',
-  registeredOn: '', status: 'Active', password: '', emailUpdates: false
+  registeredOn: '', status: 'Active', emailUpdates: false
 };
 
 /** The logged-in patient's view of the ClinicStore. */
@@ -58,7 +58,11 @@ export class PatientAppointmentsService {
     this.viewingId.set(null);
   }
 
-  cancel(id: string, reason: string): Result {
-    return this.store.cancel(id, 'patient', reason);
+  updateContact(changes: Partial<PatientInput>): Promise<Result> {
+    return this.store.updatePatient(this.patient.id, changes);
+  }
+
+  cancel(id: string, reason: string): Promise<Result> {
+    return this.store.cancel(id, reason);
   }
 }

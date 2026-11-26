@@ -57,8 +57,10 @@ public partial class DoctorsController(ClinicDbContext db, ClinicService clinic)
     {
         var doctor = await db.Doctors.FirstOrDefaultAsync(d => d.Id == id, ct);
         if (doctor is null) return Error("Doctor not found.", 404);
+        var wasActive = doctor.Status == DoctorStatus.Active;
         Apply(doctor, req);
         await db.SaveChangesAsync(ct);
+        if (wasActive && doctor.Status == DoctorStatus.OnLeave) await clinic.NotifyDoctorOnLeaveAsync(doctor, ct);
         return doctor.ToDto();
     }
 

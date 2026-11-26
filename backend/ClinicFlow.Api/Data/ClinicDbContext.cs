@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace ClinicFlow.Api.Data;
 
@@ -11,6 +12,20 @@ public class ClinicDbContext(DbContextOptions<ClinicDbContext> options) : DbCont
     public DbSet<Appointment> Appointments => Set<Appointment>();
     public DbSet<AppointmentEvent> AppointmentEvents => Set<AppointmentEvent>();
     public DbSet<Notification> Notifications => Set<Notification>();
+
+    // Oracle's MySQL provider fails to read DATE/TIME columns straight into DateOnly/TimeOnly
+    // (InvalidCastException), so they are converted through the types it does support.
+    protected override void ConfigureConventions(ModelConfigurationBuilder b)
+    {
+        b.Properties<DateOnly>().HaveConversion<DateOnlyConverter>().HaveColumnType("date");
+        b.Properties<TimeOnly>().HaveConversion<TimeOnlyConverter>().HaveColumnType("time");
+    }
+
+    private sealed class DateOnlyConverter() : ValueConverter<DateOnly, DateTime>(
+        d => d.ToDateTime(TimeOnly.MinValue), d => DateOnly.FromDateTime(d));
+
+    private sealed class TimeOnlyConverter() : ValueConverter<TimeOnly, TimeSpan>(
+        t => t.ToTimeSpan(), t => TimeOnly.FromTimeSpan(t));
 
     protected override void OnModelCreating(ModelBuilder b)
     {

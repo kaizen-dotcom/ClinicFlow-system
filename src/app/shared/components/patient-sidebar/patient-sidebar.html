@@ -35,10 +35,12 @@
   </nav>
 
   <div class="sidebar-footer">
-    <div class="help-box">
-      <h4>Need a hand?</h4>
-      <a href="mailto:support@clinicflow.com">Contact the clinic <svg [lucideIcon]="ArrowUpRightIcon" size="14" class="arrow-icon" aria-hidden="true"></svg></a>
-    </div>
+    @if (clinic.clinicInfo().phone; as phone) {
+      <div class="help-box">
+        <h4>Need a hand?</h4>
+        <a [href]="'tel:' + phone">Call the clinic: {{ phone }}</a>
+      </div>
+    }
     <div class="version-info">
       ClinicFlow &middot; Patient v1.0
     </div>

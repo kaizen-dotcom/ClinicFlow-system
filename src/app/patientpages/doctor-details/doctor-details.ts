@@ -5,7 +5,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs';
 import { BookingModalService } from '../../shared/services/booking-modal.service';
 import { ClinicStore } from '../../shared/services/clinic-store.service';
-import { CLINIC_ADDRESS, Slot } from '../../shared/services/clinic.models';
+import { Slot } from '../../shared/services/clinic.models';
 
 @Component({
   selector: 'app-doctor-details',
@@ -18,7 +18,7 @@ export class DoctorDetails {
   readonly booking = inject(BookingModalService);
   private readonly clinic = inject(ClinicStore);
 
-  readonly address = CLINIC_ADDRESS;
+  readonly clinicName = computed(() => this.clinic.clinicInfo().name);
 
   private readonly doctorId = toSignal(inject(ActivatedRoute).paramMap.pipe(map(p => p.get('id') ?? '')), { initialValue: '' });
   readonly doctor = computed(() => this.clinic.doctor(this.doctorId()));
@@ -26,7 +26,6 @@ export class DoctorDetails {
   /** Next dates with open slots (up to 7). */
   readonly dates = computed(() => {
     const d = this.doctor();
-    this.clinic.appointments(); // refresh when bookings change
     return d && d.status === 'Active' ? this.clinic.availableDates(d.id, 7) : [];
   });
 
@@ -39,7 +38,6 @@ export class DoctorDetails {
   readonly slots = computed<Slot[]>(() => {
     const d = this.doctor();
     const date = this.selectedDate();
-    this.clinic.appointments();
     return d && date ? this.clinic.slotsFor(d.id, date) : [];
   });
 

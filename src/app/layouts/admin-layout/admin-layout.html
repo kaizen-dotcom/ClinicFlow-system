@@ -1,6 +1,7 @@
-<div class="admin-container">
+<div class="admin-container" [class.menu-open]="menu.open()" (keydown.escape)="menu.close()">
   <!-- The Sidebar stays fixed on the left -->
   <app-sidebar></app-sidebar>
+  @if (menu.open()) { <div class="menu-backdrop" (click)="menu.close()"></div> }
 
   <!-- The Main area holds the Navbar and the Page Content -->
   <div class="main-content">
@@ -8,6 +9,11 @@
     
     <!-- The Page Content gets injected here -->
     <main class="page-content">
+      @if (clinic.loadError()) {
+        <p class="cf-alert cf-alert-error" role="alert">
+          {{ clinic.loadError() }} <button type="button" class="btn-secondary" (click)="clinic.refresh()">Retry</button>
+        </p>
+      }
       <router-outlet></router-outlet>
     </main>
   </div>
