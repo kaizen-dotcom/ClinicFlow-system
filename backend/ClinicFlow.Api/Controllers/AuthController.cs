@@ -1,5 +1,6 @@
 using ClinicFlow.Api.Data;
 using ClinicFlow.Api.Dtos;
+using ClinicFlow.Api.Security;
 using ClinicFlow.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -10,30 +11,44 @@ using Microsoft.EntityFrameworkCore;
 namespace ClinicFlow.Api.Controllers;
 
 public class AuthController(ClinicDbContext db, ClinicService clinic, TokenService tokens, IPasswordHasher<object> hasher,
-    TimeProvider clock) : ApiControllerBase
+    TimeProvider clock, LoginGuard guard, ILogger<AuthController> logger) : ApiControllerBase
 {
     private const string InvalidLogin = "Incorrect email or password.";
 
     /// <summary>Logs in an admin or a patient.</summary>
     [HttpPost("login")]
     [AllowAnonymous]
-    [EnableRateLimiting("auth")]
+    [EnableRateLimiting(RateLimits.Auth)]
     public async Task<ActionResult<AuthResponse>> Login(LoginRequest req, CancellationToken ct)
     {
         var email = req.Email.Trim().ToLowerInvariant();
+        var client = RateLimits.Client(HttpContext);
+        if (guard.IsLocked(email, client))
+        {
+            var minutes = (int)guard.Lockout.TotalMinutes;
+            Response.Headers.RetryAfter = (minutes * 60).ToString();
+            return Error($"Too many failed attempts. Please try again in {minutes} minutes.", 429);
+        }
 
         var admin = await db.Admins.FirstOrDefaultAsync(a => a.Email == email, ct);
         if (admin is not null)
         {
             if (!Verify(admin.PasswordHash, req.Password, () => admin.PasswordHash = hasher.HashPassword(null!, req.Password)))
-                return Error(InvalidLogin, 401);
+                return Rejected(email, client);
+            guard.Succeeded(email, client);
             await db.SaveChangesAsync(ct);
             return Issue("admin", Roles.Admin, admin.Email, admin.PasswordHash);
         }
 
         var patient = await db.Patients.FirstOrDefaultAsync(p => p.Email == email, ct);
-        if (patient is null || !Verify(patient.PasswordHash, req.Password, () => patient.PasswordHash = hasher.HashPassword(null!, req.Password)))
-            return Error(InvalidLogin, 401);
+        if (patient is null)
+        {
+            guard.SpendVerificationTime(req.Password);
+            return Rejected(email, client);
+        }
+        if (!Verify(patient.PasswordHash, req.Password, () => patient.PasswordHash = hasher.HashPassword(null!, req.Password)))
+            return Rejected(email, client);
+        guard.Succeeded(email, client);
         if (patient.Status != PatientStatus.Active)
             return Error("This account is inactive. Please contact the clinic.", 403);
         await db.SaveChangesAsync(ct);
@@ -43,7 +58,7 @@ public class AuthController(ClinicDbContext db, ClinicService clinic, TokenServi
     /// <summary>Patient self-registration; returns a token so the patient is signed in.</summary>
     [HttpPost("register")]
     [AllowAnonymous]
-    [EnableRateLimiting("auth")]
+    [EnableRateLimiting(RateLimits.SignUp)]
     public async Task<ActionResult<AuthResponse>> Register(RegisterRequest req, CancellationToken ct)
     {
         if (!Mapping.TryParseDate(req.Dob, out var dob) || dob > DateOnly.FromDateTime(DateTime.Today))
@@ -59,7 +74,7 @@ public class AuthController(ClinicDbContext db, ClinicService clinic, TokenServi
     /// </summary>
     [HttpPost("password")]
     [Authorize]
-    [EnableRateLimiting("auth")]
+    [EnableRateLimiting(RateLimits.Auth)]
     public async Task<ActionResult<AuthResponse>> ChangePassword(ChangePasswordRequest req, CancellationToken ct)
     {
         if (req.Next == req.Current) return Error("Choose a password different from the current one.");
@@ -80,6 +95,14 @@ public class AuthController(ClinicDbContext db, ClinicService clinic, TokenServi
         patient.PasswordHash = hasher.HashPassword(null!, req.Next);
         await db.SaveChangesAsync(ct);
         return Issue(patient.Id, Roles.Patient, patient.Email, patient.PasswordHash);
+    }
+
+    private ActionResult Rejected(string email, string client)
+    {
+        guard.Failed(email, client);
+        // The email is left out of the log: it is personal data, and text chosen by the caller.
+        logger.LogWarning("Failed sign-in from {Client}.", client);
+        return Error(InvalidLogin, 401);
     }
 
     private bool Verify(string hash, string password, Action rehash)

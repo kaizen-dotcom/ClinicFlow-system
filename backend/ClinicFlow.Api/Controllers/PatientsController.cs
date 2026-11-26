@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using ClinicFlow.Api.Data;
 using ClinicFlow.Api.Dtos;
+using ClinicFlow.Api.Security;
 using ClinicFlow.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -10,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 namespace ClinicFlow.Api.Controllers;
 
 [Authorize]
-public class PatientsController(ClinicDbContext db, ClinicService clinic, IPasswordHasher<object> hasher) : ApiControllerBase
+public class PatientsController(ClinicDbContext db, ClinicService clinic, IPasswordHasher<object> hasher, LoginGuard guard) : ApiControllerBase
 {
     [HttpGet]
     [Authorize(Roles = Roles.Admin)]
@@ -64,10 +65,11 @@ public class PatientsController(ClinicDbContext db, ClinicService clinic, IPassw
         var temporary = NewTemporaryPassword();
         p.PasswordHash = hasher.HashPassword(null!, temporary);
         await db.SaveChangesAsync(ct);
+        guard.Forget(p.Email);
         return new TemporaryPasswordResponse(temporary);
     }
 
-    private static string NewTemporaryPassword() => "Cf-" + Convert.ToHexString(RandomNumberGenerator.GetBytes(4)) + "!";
+    private static string NewTemporaryPassword() => "Cf-" + Convert.ToHexString(RandomNumberGenerator.GetBytes(8)) + "!";
 
     [HttpPut("{id}/status")]
     [Authorize(Roles = Roles.Admin)]

@@ -14,6 +14,9 @@ namespace ClinicFlow.Api.Controllers;
 [Authorize]
 public class AppointmentsController(ClinicService clinic) : ApiControllerBase
 {
+    /// <summary>Longest note or reason: these are stored, sometimes with a short prefix, in 500-character columns.</summary>
+    private const int MaxNote = 450;
+
     [HttpGet]
     public async Task<List<AppointmentDto>> GetAll([FromQuery] string? status, [FromQuery] string? doctorId,
         [FromQuery] string? patientId, CancellationToken ct)
@@ -52,12 +55,12 @@ public class AppointmentsController(ClinicService clinic) : ApiControllerBase
     [HttpPost("{id}/approve")]
     [Authorize(Roles = Roles.Admin)]
     public Task<ActionResult<AppointmentDto>> Approve(string id, NoteRequest req, CancellationToken ct) =>
-        Run(id, n => clinic.ApproveAsync(n, req.Text, ct), ct);
+        Run(id, req, n => clinic.ApproveAsync(n, req.Text, ct), ct);
 
     [HttpPost("{id}/reject")]
     [Authorize(Roles = Roles.Admin)]
     public Task<ActionResult<AppointmentDto>> Reject(string id, NoteRequest req, CancellationToken ct) =>
-        Run(id, n => clinic.RejectAsync(n, req.Text, ct), ct);
+        Run(id, req, n => clinic.RejectAsync(n, req.Text, ct), ct);
 
     [HttpPost("{id}/complete")]
     [Authorize(Roles = Roles.Admin)]
@@ -67,7 +70,7 @@ public class AppointmentsController(ClinicService clinic) : ApiControllerBase
     [HttpPost("{id}/no-show")]
     [Authorize(Roles = Roles.Admin)]
     public Task<ActionResult<AppointmentDto>> NoShow(string id, NoteRequest req, CancellationToken ct) =>
-        Run(id, n => clinic.MarkNoShowAsync(n, req.Text, ct), ct);
+        Run(id, req, n => clinic.MarkNoShowAsync(n, req.Text, ct), ct);
 
     /// <summary>Patients can move their own appointments (back to Pending); admins can move any.</summary>
     [HttpPost("{id}/reschedule")]
@@ -83,7 +86,7 @@ public class AppointmentsController(ClinicService clinic) : ApiControllerBase
     {
         var existing = await Find(id, ct);
         if (existing is null) return Error("Appointment not found.", 404);
-        return await Run(id, n => clinic.CancelAsync(n, !User.IsAdmin(), req.Text, ct), ct);
+        return await Run(id, req, n => clinic.CancelAsync(n, !User.IsAdmin(), req.Text, ct), ct);
     }
 
     /// <summary>Loads an appointment visible to the current user (patients: own only).</summary>
@@ -92,6 +95,13 @@ public class AppointmentsController(ClinicService clinic) : ApiControllerBase
         if (!Mapping.TryParseAppointmentRef(id, out var n)) return null;
         var a = await clinic.AppointmentsQuery().FirstOrDefaultAsync(x => x.Id == n, ct);
         return a is null || (!User.IsAdmin() && a.PatientId != User.UserId()) ? null : a;
+    }
+
+    private async Task<ActionResult<AppointmentDto>> Run(string id, NoteRequest note,
+        Func<int, Task<ServiceResult<Appointment>>> action, CancellationToken ct)
+    {
+        if (note.Text?.Trim().Length > MaxNote) return Error($"Keep the note under {MaxNote} characters.");
+        return await Run(id, action, ct);
     }
 
     private async Task<ActionResult<AppointmentDto>> Run(string id, Func<int, Task<ServiceResult<Appointment>>> action, CancellationToken ct)

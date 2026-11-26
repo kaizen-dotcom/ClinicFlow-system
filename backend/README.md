@@ -79,7 +79,36 @@ Errors are returned as `{ "error": "message" }` with a matching status code (400
 - Changing or resetting a password, or deactivating a patient, ends that account's existing sessions immediately.
 - Every status change notifies the patient.
 - Patients only ever see their own records; admin endpoints require the Admin role.
-- Passwords are hashed (ASP.NET Core Identity PBKDF2); login/register are rate-limited (10/min per IP).
+- Passwords are hashed (ASP.NET Core Identity PBKDF2).
+
+## Security limits
+
+Defaults are in `ClinicFlow.Api/Security/SecurityOptions.cs`; override them in a `Security` configuration section.
+
+| Protection | Default |
+|---|---|
+| Requests per client address | 150 per 10 seconds, 40 at once (40 more wait in line) |
+| Changes (POST/PUT/DELETE) per address | 60 per minute |
+| Login and password change per address | 10 per minute |
+| Sign-ups per address | 10 per hour |
+| Wrong passwords | 5 from one address, or 20 from all addresses, pause that account's sign-in for 15 minutes |
+| Request body / incoming live-update message | 64 KB / 4 KB |
+| Request time / open connections | 30 seconds / 1000 |
+
+Responses carry security headers and are not cached. Outside Development, errors never include internal details.
+
+### Before putting this online
+
+The limits above stop a single source from abusing the API. They cannot absorb a large distributed (DDoS)
+flood, which has to be filtered before it reaches the server.
+
+- Put the API behind a DDoS-protecting proxy or host service (for example Cloudflare or Azure Front Door) and
+  block direct access to the server.
+- Behind a proxy, configure ASP.NET Core forwarded headers, trusting that proxy's addresses only. Without this,
+  all users share one address and one allowance.
+- Run with `ASPNETCORE_ENVIRONMENT=Production`, and set `AllowedHosts` and `Cors:AllowedOrigins` to your domain.
+- Use a dedicated MySQL user limited to this database (not `root`), keep MySQL closed to the internet, and back it up.
+- Check packages regularly: `dotnet list package --vulnerable --include-transitive`.
 
 ## Database migrations
 

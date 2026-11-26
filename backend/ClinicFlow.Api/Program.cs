@@ -1,10 +1,11 @@
 using System.Security.Cryptography;
-using System.Threading.RateLimiting;
 using ClinicFlow.Api.Data;
 using ClinicFlow.Api.Dtos;
 using ClinicFlow.Api.Realtime;
+using ClinicFlow.Api.Security;
 using ClinicFlow.Api.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Http.Timeouts;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -13,12 +14,32 @@ using Microsoft.IdentityModel.Tokens;
 var builder = WebApplication.CreateBuilder(args);
 var config = builder.Configuration;
 
+// ---------- Server limits (oversized, slow or too many connections) ----------
+var security = config.GetSection("Security").Get<SecurityOptions>() ?? new SecurityOptions();
+builder.Services.AddSingleton(security);
+builder.Services.AddSingleton<LoginGuard>();
+builder.WebHost.ConfigureKestrel(k =>
+{
+    k.AddServerHeader = false;
+    k.Limits.MaxRequestBodySize = security.MaxRequestBodyBytes;
+    k.Limits.MaxConcurrentConnections = security.MaxConnections;
+    k.Limits.MaxConcurrentUpgradedConnections = security.MaxConnections;
+    k.Limits.RequestHeadersTimeout = TimeSpan.FromSeconds(15);
+});
+builder.Services.AddRequestTimeouts(o => o.DefaultPolicy = new RequestTimeoutPolicy
+{
+    Timeout = TimeSpan.FromSeconds(security.RequestTimeoutSeconds),
+    TimeoutStatusCode = StatusCodes.Status503ServiceUnavailable
+});
+
+
 // ---------- Database (MySQL) ----------
 // Set with: dotnet user-secrets set "ConnectionStrings:ClinicFlow" "server=localhost;port=3306;database=clinicflow_db;user=...;password=..."
 var connectionString = config.GetConnectionString("ClinicFlow")
     ?? throw new InvalidOperationException(
         "Missing connection string 'ConnectionStrings:ClinicFlow'. Set it with 'dotnet user-secrets set' (see README.md).");
-builder.Services.AddSignalR(); // live updates
+// Live updates. Browsers only listen, so anything large coming from them is refused.
+builder.Services.AddSignalR(o => o.MaximumReceiveMessageSize = 4 * 1024);
 builder.Services.AddSingleton<ChangeBroadcaster>();
 builder.Services.AddDbContext<ClinicDbContext>((services, o) =>
     o.UseMySQL(connectionString).AddInterceptors(services.GetRequiredService<ChangeBroadcaster>()));
@@ -52,6 +73,7 @@ builder.Services
             ValidateIssuer = true, ValidIssuer = jwt.Issuer,
             ValidateAudience = true, ValidAudience = jwt.Audience,
             ValidateIssuerSigningKey = true, IssuerSigningKey = jwt.SigningKey(),
+            ValidAlgorithms = [SecurityAlgorithms.HmacSha256],
             ValidateLifetime = true, ClockSkew = TimeSpan.FromMinutes(1),
             RoleClaimType = System.Security.Claims.ClaimTypes.Role,
             NameClaimType = "sub"
@@ -71,14 +93,8 @@ builder.Services
     });
 builder.Services.AddAuthorization();
 
-// Slow down password guessing: 10 login/register attempts per minute per IP.
-builder.Services.AddRateLimiter(o =>
-{
-    o.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-    o.AddPolicy("auth", ctx => RateLimitPartition.GetFixedWindowLimiter(
-        ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-        _ => new FixedWindowRateLimiterOptions { PermitLimit = 10, Window = TimeSpan.FromMinutes(1) }));
-});
+// Request limits per client, with stricter ones for sign-in and sign-up (see Security/RateLimits.cs).
+builder.Services.AddRateLimiter(o => RateLimits.Configure(o, security));
 
 // ---------- CORS (Angular dev server) ----------
 var allowedOrigins = config.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? ["https://localhost:4200"];
@@ -114,16 +130,26 @@ if (app.Environment.IsDevelopment())
 }
 else
 {
+    // Never show internal error details to callers (the error itself is still logged).
+    app.UseExceptionHandler(new ExceptionHandlerOptions
+    {
+        // A refused request (for example one that is too large) keeps its own status code.
+        StatusCodeSelector = error => error is BadHttpRequestException bad ? bad.StatusCode : StatusCodes.Status500InternalServerError,
+        ExceptionHandler = context => context.Response.WriteAsJsonAsync(new ErrorResponse(
+            context.Response.StatusCode < 500 ? "The request was refused." : "Something went wrong. Please try again."))
+    });
     app.UseHsts(); // tells browsers to use HTTPS only
     app.UseHttpsRedirection();
 }
 
+app.UseSecurityHeaders();
 app.UseCors();
 app.UseRateLimiter();
+app.UseRequestTimeouts();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
-app.MapHub<ClinicHub>(ClinicHub.Path);
+app.MapHub<ClinicHub>(ClinicHub.Path).DisableRequestTimeout(); // stays open by design
 app.MapGet("/api/health", () => Results.Ok(new { status = "ok" }));
 
 app.Run();

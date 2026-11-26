@@ -3,14 +3,16 @@ using System.ComponentModel.DataAnnotations;
 namespace ClinicFlow.Api.Dtos;
 
 // ---------- Auth ----------
-public record LoginRequest([Required, EmailAddress] string Email, [Required] string Password);
+public record LoginRequest(
+    [Required, EmailAddress, MaxLength(200)] string Email,
+    [Required, MaxLength(128)] string Password);
 
 public record RegisterRequest(
     [Required, MaxLength(120)] string FullName,
     [Required, EmailAddress, MaxLength(200)] string Email,
     [Required, MinLength(8), MaxLength(100)] string Password,
     [Required, MaxLength(40)] string Phone,
-    [Required] string Dob);
+    [Required, MaxLength(10)] string Dob);
 
 public record AuthResponse(string Token, string Role, string UserId, DateTime ExpiresAt);
 
@@ -38,7 +40,7 @@ public record UpdatePatientRequest(
     [MaxLength(120)] string? FullName,
     [EmailAddress, MaxLength(200)] string? Email,
     [MaxLength(40)] string? Phone,
-    string? Dob,
+    [MaxLength(10)] string? Dob,
     [MaxLength(30)] string? Gender,
     [MaxLength(250)] string? Address,
     bool? EmailUpdates);
@@ -47,7 +49,7 @@ public record CreatePatientRequest(
     [Required, MaxLength(120)] string FullName,
     [Required, EmailAddress, MaxLength(200)] string Email,
     [Required, MaxLength(40)] string Phone,
-    [Required] string Dob,
+    [Required, MaxLength(10)] string Dob,
     [MaxLength(30)] string? Gender,
     [MaxLength(250)] string? Address);
 
@@ -66,10 +68,10 @@ public record AppointmentDto(
     bool FirstVisit, string Status, DateTime RequestedOn, string? ClinicNote, string? VisitSummary, List<StatusEventDto> History);
 
 public record CreateAppointmentRequest(
-    string? PatientId,   // required when staff book on a patient's behalf; ignored for patients
-    [Required] string DoctorId,
-    [Required] string Date,
-    [Required] string Time,
+    [MaxLength(16)] string? PatientId,   // required when staff book on a patient's behalf; ignored for patients
+    [Required, MaxLength(64)] string DoctorId,
+    [Required, MaxLength(10)] string Date,
+    [Required, MaxLength(8)] string Time,
     [Required, MaxLength(80)] string Type,
     [Required, MaxLength(500)] string Reason,
     [MaxLength(500)] string? Notes,
@@ -77,7 +79,7 @@ public record CreateAppointmentRequest(
 
 public record NoteRequest([MaxLength(2000)] string? Text);
 
-public record RescheduleRequest([Required] string Date, [Required] string Time);
+public record RescheduleRequest([Required, MaxLength(10)] string Date, [Required, MaxLength(8)] string Time);
 
 // ---------- Schedules ----------
 public record SlotDto(string Time, string End, string Label, bool Available, bool Booked);
@@ -89,10 +91,10 @@ public record BusySlotDto(string DoctorId, string Date, string Time);
 public record AvailabilityDto(List<ScheduleBlockDto> Blocks, List<BusySlotDto> Busy);
 
 public record AddAvailabilityRequest(
-    [Required] string DoctorId,
-    [Required] string Date,
-    [Required] string Start,
-    [Required] string End,
+    [Required, MaxLength(64)] string DoctorId,
+    [Required, MaxLength(10)] string Date,
+    [Required, MaxLength(8)] string Start,
+    [Required, MaxLength(8)] string End,
     [Range(5, 240)] int SlotMinutes,
     [Range(0, 52)] int RepeatWeeks);
 
@@ -117,6 +119,6 @@ public record UpdateAdminRequest(
     [Required, MaxLength(40)] string Phone,
     [Required, MaxLength(120)] string ClinicName);
 
-public record ChangePasswordRequest([Required] string Current, [Required, MinLength(8), MaxLength(100)] string Next);
+public record ChangePasswordRequest([Required, MaxLength(128)] string Current, [Required, MinLength(8), MaxLength(100)] string Next);
 
 public record ErrorResponse(string Error);
