@@ -49,11 +49,11 @@
                [class.slot-available]="slot.available && slot.time !== selectedTime()"
                [class.slot-partial]="slot.booked"
                [class.slot-unavailable]="!slot.available && !slot.booked"
-               [class.slot-selected]="slot.time === selectedTime()"
+               [class.slot-selected]="slot.available && slot.time === selectedTime()"
                (click)="selectSlot(slot)">
             <span class="slot-time">{{ slot.label }}</span>
             <span class="slot-status">
-              {{ slot.time === selectedTime() ? 'Selected' : slot.booked ? 'Booked' : slot.available ? 'Available' : 'Unavailable' }}
+              {{ slot.available && slot.time === selectedTime() ? 'Selected' : slot.booked ? 'Booked' : slot.available ? 'Available' : 'Unavailable' }}
             </span>
           </button>
         }

@@ -1,7 +1,7 @@
 <!-- Page Header -->
 <div class="page-header">
   <h1>Doctor management</h1>
-  <button class="btn-primary" (click)="openAdd()">+ Add doctor</button>
+  <button class="btn-primary" (click)="openAdd()"><svg lucidePlus size="16" aria-hidden="true"></svg> Add doctor</button>
 </div>
 
 <!-- 1. Stat Cards -->
@@ -88,7 +88,7 @@
           <h2 id="de-title">{{ e.id ? 'Edit doctor' : 'Add doctor' }}</h2>
           <p>This profile is shown to patients on Browse doctors.</p>
         </div>
-        <button type="button" class="cf-close" aria-label="Close" (click)="editing = null">&times;</button>
+        <button type="button" class="cf-close" aria-label="Close" (click)="editing = null"><svg lucideX size="20" aria-hidden="true"></svg></button>
       </header>
       <form #df="ngForm" (ngSubmit)="save(df)" novalidate>
         <div class="cf-modal-body">

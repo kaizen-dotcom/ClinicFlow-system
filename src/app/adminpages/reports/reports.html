@@ -50,13 +50,37 @@
       </div>
       <div class="bars-container">
         @for (bar of bars().items; track bar.day) {
-          <div class="bar-group" [attr.title]="bar.day + ': ' + bar.count + ' appointment' + (bar.count === 1 ? '' : 's')">
+          <div class="bar-group" tabindex="0" [class.active]="hovered()?.day === bar.day"
+               [attr.aria-label]="'Day ' + bar.day + ': ' + bar.count + ' appointment' + (bar.count === 1 ? '' : 's')"
+               (mouseenter)="showDay(bar.day, $event)" (mouseleave)="hideDay()"
+               (focus)="showDay(bar.day, $event)" (blur)="hideDay()" (click)="showDay(bar.day, $event)"
+               (keydown.escape)="hideDay()">
             <div class="bar" [style.height]="bar.height"></div>
             @if (bar.showLabel) { <span class="x-label">{{ bar.day }}</span> }
           </div>
         }
       </div>
     </div>
+
+    @if (dayDetails(); as d) {
+      <div class="day-card" role="tooltip" [style.left.px]="d.x" [style.top.px]="d.y">
+        <strong>{{ d.date | date: 'EEEE, d MMMM' }}</strong>
+        <span class="day-total">{{ d.total ? d.total + (d.total === 1 ? ' appointment' : ' appointments') : 'No appointments' }}</span>
+        @if (d.total) {
+          <ul class="day-statuses">
+            @for (s of d.statuses; track s.label) {
+              <li><span class="swatch" [style.background]="s.color"></span>{{ s.label }}<b>{{ s.count }}</b></li>
+            }
+          </ul>
+          <ul class="day-list">
+            @for (a of d.first; track a.id) {
+              <li><b>{{ a.start }}</b> {{ a.patient }}<small>{{ a.doctor }}</small></li>
+            }
+          </ul>
+          @if (d.more) { <span class="day-more">+ {{ d.more }} more</span> }
+        }
+      </div>
+    }
   </div>
 
   <!-- Status Breakdown -->

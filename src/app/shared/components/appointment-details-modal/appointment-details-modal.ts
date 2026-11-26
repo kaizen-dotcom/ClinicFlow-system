@@ -1,3 +1,4 @@
+import { LucideX } from '@lucide/angular';
 import { ToastService } from '../../services/toast.service';
 import { ChangeDetectorRef, Component, HostListener, effect, inject } from '@angular/core';
 import { ClinicStore } from '../../services/clinic-store.service';
@@ -11,7 +12,7 @@ import { BookingModalService } from '../../services/booking-modal.service';
 @Component({
   selector: 'app-appointment-details-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReschedulePicker],
+  imports: [CommonModule, FormsModule, ReschedulePicker, LucideX],
   templateUrl: './appointment-details-modal.html',
   styleUrl: './appointment-details-modal.css'
 })

@@ -1,3 +1,4 @@
+import { LucidePlus, LucideArrowRight } from '@lucide/angular';
 import { ToastService } from '../../shared/services/toast.service';
 import { ChangeDetectorRef, Component, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -9,7 +10,7 @@ import { addDays, startOfWeek, todayISO } from '../../shared/utils/time';
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, LucidePlus, LucideArrowRight],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css'
 })

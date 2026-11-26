@@ -7,7 +7,7 @@
           <h2 id="book-title">{{ sent ? 'Request sent' : 'Book appointment' }}</h2>
           <p>{{ sent ? 'The clinic will review your request shortly.' : 'Fill in your details and choose an available time.' }}</p>
         </div>
-        <button type="button" class="icon-btn" aria-label="Close" (click)="close()">&times;</button>
+        <button type="button" class="icon-btn" aria-label="Close" (click)="close()"><svg lucideX size="20" aria-hidden="true"></svg></button>
       </header>
 
       @if (!sent) {
@@ -101,11 +101,14 @@
                     <div class="chips">
                       @for (s of slots; track s.time) {
                         <button type="button" class="slot-chip" [class.selected]="form.time === s.time"
-                                [disabled]="!s.available" [attr.title]="s.booked ? 'Already booked' : null" (click)="selectSlot(s)">
+                                [disabled]="!s.available || clashes(s)"
+                                [attr.title]="clashes(s) ? 'You already have an appointment then' : s.booked ? 'Already booked' : null"
+                                (click)="selectSlot(s)">
                           {{ s.label }}
                         </button>
                       }
                     </div>
+                    <small class="hint">Greyed-out times are booked, past, or overlap your other appointments.</small>
                     @if (submitted && !form.time) { <small class="error">Please choose a time.</small> }
                   </div>
                 } @else {

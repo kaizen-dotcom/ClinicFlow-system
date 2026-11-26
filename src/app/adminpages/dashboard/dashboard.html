@@ -1,7 +1,7 @@
 <!-- Page Header -->
 <div class="page-header">
   <h1>Dashboard</h1>
-  <button class="btn-primary" (click)="ui.newAppointment()">+ New appointment</button>
+  <button class="btn-primary" (click)="ui.newAppointment()"><svg lucidePlus size="16" aria-hidden="true"></svg> New appointment</button>
 </div>
 
 <!-- 1. Stat Cards Grid -->
@@ -19,7 +19,7 @@
 <div class="section-container">
   <div class="section-header">
     <h2>Pending requests</h2>
-    <a routerLink="/admin/appointments" [queryParams]="{ status: 'Pending' }" class="view-all">View all requests →</a>
+    <a routerLink="/admin/appointments" [queryParams]="{ status: 'Pending' }" class="view-all">View all requests <svg lucideArrowRight size="16" class="arrow-icon" aria-hidden="true"></svg></a>
   </div>
 
   <div class="table-wrapper">

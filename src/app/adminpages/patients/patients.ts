@@ -1,3 +1,4 @@
+import { LucidePlus, LucideChevronLeft, LucideChevronRight, LucideX } from '@lucide/angular';
 import { ToastService } from '../../shared/services/toast.service';
 import { ChangeDetectorRef, Component, HostListener, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -15,7 +16,7 @@ type PatientForm = Pick<Patient, 'fullName' | 'email' | 'phone' | 'dob' | 'gende
 @Component({
   selector: 'app-patients',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, LucidePlus, LucideChevronLeft, LucideChevronRight, LucideX],
   templateUrl: './patients.html',
   styleUrl: './patients.css'
 })

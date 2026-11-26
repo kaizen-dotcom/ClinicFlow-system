@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Threading.RateLimiting;
 using ClinicFlow.Api.Data;
 using ClinicFlow.Api.Dtos;
+using ClinicFlow.Api.Realtime;
 using ClinicFlow.Api.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -17,7 +18,10 @@ var config = builder.Configuration;
 var connectionString = config.GetConnectionString("ClinicFlow")
     ?? throw new InvalidOperationException(
         "Missing connection string 'ConnectionStrings:ClinicFlow'. Set it with 'dotnet user-secrets set' (see README.md).");
-builder.Services.AddDbContext<ClinicDbContext>(o => o.UseMySQL(connectionString));
+builder.Services.AddSignalR(); // live updates
+builder.Services.AddSingleton<ChangeBroadcaster>();
+builder.Services.AddDbContext<ClinicDbContext>((services, o) =>
+    o.UseMySQL(connectionString).AddInterceptors(services.GetRequiredService<ChangeBroadcaster>()));
 
 // ---------- Auth (JWT) ----------
 var jwt = config.GetSection("Jwt").Get<JwtOptions>() ?? new JwtOptions();
@@ -52,7 +56,18 @@ builder.Services
             RoleClaimType = System.Security.Claims.ClaimTypes.Role,
             NameClaimType = "sub"
         };
-        o.Events = new JwtBearerEvents { OnTokenValidated = SessionValidator.ValidateAsync };
+        o.Events = new JwtBearerEvents
+        {
+            // Browsers can't set headers on WebSocket connections, so the hub receives the token in the query string.
+            OnMessageReceived = context =>
+            {
+                var token = context.Request.Query["access_token"];
+                if (!string.IsNullOrEmpty(token) && context.HttpContext.Request.Path.StartsWithSegments(ClinicHub.Path))
+                    context.Token = token;
+                return Task.CompletedTask;
+            },
+            OnTokenValidated = SessionValidator.ValidateAsync
+        };
     });
 builder.Services.AddAuthorization();
 
@@ -108,6 +123,7 @@ app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHub<ClinicHub>(ClinicHub.Path);
 app.MapGet("/api/health", () => Results.Ok(new { status = "ok" }));
 
 app.Run();

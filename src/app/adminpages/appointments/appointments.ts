@@ -1,3 +1,4 @@
+import { LucidePlus, LucideChevronLeft, LucideChevronRight } from '@lucide/angular';
 import { ToastService } from '../../shared/services/toast.service';
 import { ChangeDetectorRef, Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -13,7 +14,7 @@ const PAGE_SIZE = 10;
 @Component({
   selector: 'app-appointments',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, LucidePlus, LucideChevronLeft, LucideChevronRight],
   templateUrl: './appointments.html',
   styleUrls: ['./appointments.css']
 })

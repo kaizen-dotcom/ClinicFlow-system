@@ -1,3 +1,4 @@
+import { LucideX } from '@lucide/angular';
 import { ToastService } from '../../services/toast.service';
 import { ChangeDetectorRef, Component, HostListener, effect, inject, untracked } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -7,11 +8,12 @@ import { BookingModalService } from '../../services/booking-modal.service';
 import { ClinicStore } from '../../services/clinic-store.service';
 import { PatientAppointmentsService } from '../../services/patient-appointments.service';
 import { APPOINTMENT_TYPES, Slot } from '../../services/clinic.models';
+import { minutes } from '../../utils/time';
 
 @Component({
   selector: 'app-book-appointment-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, LucideX],
   templateUrl: './book-appointment-modal.html',
   styleUrl: './book-appointment-modal.css'
 })
@@ -37,6 +39,12 @@ export class BookAppointmentModal {
   bookedLabel = '';
 
   constructor() {
+    // Someone else may take a time while this window is open.
+    effect(() => {
+      this.clinic.schedules(); // changes after every reload
+      untracked(() => this.syncSlots());
+    });
+
     // Reset the form each time the modal opens, applying any preselected doctor/date/time.
     effect(() => {
       if (!this.modal.isOpen()) return;
@@ -76,14 +84,28 @@ export class BookAppointmentModal {
     this.loadSlots();
   }
 
+  /** True when the patient already has a visit overlapping this time (the server would refuse it). */
+  clashes(slot: Slot): boolean {
+    return this.mine.appointments().some(a => this.mine.isUpcoming(a) && a.date === this.form.date &&
+      minutes(a.time) < minutes(slot.end) && minutes(slot.time) < minutes(a.time) + a.duration);
+  }
+
   selectSlot(slot: Slot): void {
-    if (slot.available) this.form.time = slot.time;
+    if (!slot.available || this.clashes(slot)) return;
+    this.form.time = slot.time;
+    this.error = '';
   }
 
   async submit(ngForm: NgForm): Promise<void> {
     this.submitted = true;
     this.error = '';
-    if (this.busy || ngForm.invalid || !this.form.doctorId || !this.form.date || !this.form.time) return;
+    if (this.busy) return;
+    const missing = this.missingFields(ngForm);
+    if (missing.length) {
+      this.toast.error(`Please complete: ${missing.join(', ')}.`);
+      this.showFirstProblem('.error');
+      return;
+    }
     this.busy = true;
     const { doctorId, date, time, type, reason, notes, firstVisit } = this.form;
     this.bookedLabel = this.slot?.label ?? '';
@@ -99,10 +121,32 @@ export class BookAppointmentModal {
     }
     this.busy = false;
     this.cdr.markForCheck();
-    if (!result.ok) { this.error = result.error; return; }
+    if (!result.ok) {
+      this.submitted = false; // show the server's reason, not "missing field" hints
+      this.error = result.error;
+      this.toast.error(result.error);
+      this.showFirstProblem('.error-box');
+      return;
+    }
     this.createdId = result.id ?? '';
     this.sent = true;
     this.toast.success('Appointment request sent.');
+  }
+
+  private missingFields(ngForm: NgForm): string[] {
+    const labels: Record<string, string> = {
+      fullName: 'full name', dob: 'date of birth', phone: 'phone number', email: 'a valid email',
+      doctorSel: 'doctor', doctorId: 'doctor', reason: 'reason for visit', consent: 'the confirmation checkbox'
+    };
+    const missing = Object.entries(ngForm.controls).filter(([, c]) => c.invalid).map(([name]) => labels[name] ?? name);
+    if (this.form.doctorId && !this.form.time) missing.push('time');
+    return [...new Set(missing)];
+  }
+
+  /** The form scrolls, so bring the problem into view. */
+  private showFirstProblem(selector: string): void {
+    setTimeout(() => document.querySelector(`app-book-appointment-modal ${selector}`)
+      ?.scrollIntoView({ behavior: 'smooth', block: 'center' }));
   }
 
   close(): void {
@@ -120,9 +164,20 @@ export class BookAppointmentModal {
     if (this.modal.isOpen()) this.close();
   }
 
+  /** Redraws the open slots after a live update, keeping the choice if it is still free. */
+  private syncSlots(): void {
+    if (!this.modal.isOpen() || this.busy || this.sent || !this.form.doctorId) return;
+    const chosen = this.form.time;
+    this.dates = this.clinic.availableDates(this.form.doctorId, 10);
+    if (!this.dates.includes(this.form.date)) this.form.date = this.dates[0] ?? '';
+    this.loadSlots(chosen);
+    if (chosen && !this.form.time) this.error = 'The time you picked was just taken. Please choose another.';
+    this.cdr.markForCheck();
+  }
+
   private loadSlots(time?: string): void {
     this.slots = this.form.doctorId && this.form.date ? this.clinic.slotsFor(this.form.doctorId, this.form.date) : [];
-    this.form.time = time && this.slots.some(s => s.time === time && s.available) ? time : '';
+    this.form.time = time && this.slots.some(s => s.time === time && s.available && !this.clashes(s)) ? time : '';
   }
 
   private emptyForm() {

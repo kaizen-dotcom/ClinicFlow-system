@@ -14,7 +14,7 @@ export type { AppointmentView } from './clinic.models';
 
 export type Result = { ok: true; id?: string } | { ok: false; error: string };
 
-/** How often an open portal checks for changes made elsewhere (new requests, approvals…). */
+/** How often an open portal checks for changes when the live connection is unavailable. */
 const REFRESH_MS = 20_000;
 
 /** Range of schedules loaded, in days around today (the API allows up to 370). */
@@ -72,6 +72,10 @@ export class ClinicStore {
   /** Set when the latest load failed; cleared by the next successful one. */
   readonly loadError = signal('');
 
+  /** True while the live (real-time) connection is up. */
+  readonly live = signal(false);
+
+  private latestLoad: Promise<void> = Promise.resolve();
   private loadedFor: string | null = null;
   private latestRequest = 0;
 
@@ -79,7 +83,7 @@ export class ClinicStore {
     const refreshIfOpen = () => {
       if (this.loadedFor && this.loadedFor === this.auth.userId() && this.auth.role && !document.hidden) void this.refresh();
     };
-    const timer = setInterval(refreshIfOpen, REFRESH_MS);
+    const timer = setInterval(() => { if (!this.live()) refreshIfOpen(); }, REFRESH_MS);
     document.addEventListener('visibilitychange', refreshIfOpen);
     inject(DestroyRef).onDestroy(() => {
       clearInterval(timer);
@@ -95,7 +99,17 @@ export class ClinicStore {
     await this.refresh();
   }
 
+  /** Reloads everything; resolves once the newest reload (this one or a later one) has finished. */
   async refresh(): Promise<void> {
+    let load = this.latestLoad = this.load();
+    await load;
+    while (load !== this.latestLoad) {
+      load = this.latestLoad;
+      await load;
+    }
+  }
+
+  private async load(): Promise<void> {
     const role = this.auth.role;
     const userId = this.auth.userId();
     if (!role) return;
@@ -134,6 +148,15 @@ export class ClinicStore {
       const requests = after.appointments.filter(a => a.status === 'Pending' && !known.has(a.id));
       if (requests.length === 1) this.toast.info(`New appointment request from ${requests[0].patient}.`);
       else if (requests.length > 1) this.toast.info(`${requests.length} new appointment requests.`);
+      // Changes patients made to existing appointments.
+      const previous = new Map(before.appointments.map(a => [a.id, a]));
+      for (const a of after.appointments) {
+        const old = previous.get(a.id);
+        if (!old || old.history.length === a.history.length) continue;
+        const latest = a.history[a.history.length - 1]?.label;
+        if (latest === 'Cancelled by patient') this.toast.info(`${a.patient} cancelled ${a.id}.`);
+        else if (latest === 'Rescheduled by patient') this.toast.info(`${a.patient} asked to move ${a.id}.`);
+      }
       return;
     }
     const known = new Set(before.notifications.map(n => n.id));

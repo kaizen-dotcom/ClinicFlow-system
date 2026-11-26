@@ -1,4 +1,5 @@
 using ClinicFlow.Api.Data;
+using ClinicFlow.Api.Realtime;
 using ClinicFlow.Api.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Hosting;
@@ -48,7 +49,8 @@ public class ApiFactory : WebApplicationFactory<Program>
         {
             services.RemoveAll<DbContextOptions<ClinicDbContext>>();
             services.RemoveAll<IDbContextOptionsConfiguration<ClinicDbContext>>();
-            services.AddDbContext<ClinicDbContext>(o => o.UseInMemoryDatabase(_dbName));
+            services.AddDbContext<ClinicDbContext>((provider, o) =>
+                o.UseInMemoryDatabase(_dbName).AddInterceptors(provider.GetRequiredService<ChangeBroadcaster>()));
             services.RemoveAll<TimeProvider>();
             services.AddSingleton<TimeProvider>(Clock);
             // Tokens are issued with the fixed test clock, so don't compare their expiry with the real time.

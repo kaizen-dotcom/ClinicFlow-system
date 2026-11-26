@@ -68,6 +68,40 @@ export class Reports {
     };
   });
 
+  /** The day whose bar is pointed at, and where to place its details card (relative to the chart card). */
+  readonly hovered = signal<{ day: number; x: number; y: number } | null>(null);
+
+  readonly dayDetails = computed(() => {
+    const point = this.hovered();
+    if (!point) return null;
+    const date = `${this.month()}-${String(point.day).padStart(2, '0')}`;
+    const list = this.rows().filter(a => a.date === date); // already in time order
+    return {
+      ...point, date, total: list.length,
+      statuses: APPOINTMENT_STATUSES
+        .map(s => ({ label: s, count: list.filter(a => a.status === s).length, color: STATUS_COLORS[s] }))
+        .filter(s => s.count),
+      first: list.slice(0, 4),
+      more: Math.max(0, list.length - 4)
+    };
+  });
+
+  showDay(day: number, event: Event): void {
+    const column = event.currentTarget as HTMLElement;
+    const card = column.closest('.chart-card') as HTMLElement;
+    const cardBox = card.getBoundingClientRect();
+    const columnBox = column.getBoundingClientRect();
+    const barBox = column.querySelector('.bar')!.getBoundingClientRect();
+    const half = 125; // half the details card's width, so it stays inside the chart card
+    const center = columnBox.left - cardBox.left + columnBox.width / 2;
+    const x = Math.min(Math.max(center, half), Math.max(half, cardBox.width - half));
+    this.hovered.set({ day, x, y: barBox.top - cardBox.top });
+  }
+
+  hideDay(): void {
+    this.hovered.set(null);
+  }
+
   readonly statusData = computed(() => {
     const total = this.rows().length;
     return APPOINTMENT_STATUSES.map(s => {

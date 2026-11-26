@@ -1,0 +1,36 @@
+<button type="button" class="bell" aria-haspopup="true" [attr.aria-expanded]="open()"
+        [attr.aria-label]="'Notifications, ' + unreadCount() + ' unread'" title="Notifications" (click)="toggle()">
+  <svg [lucideIcon]="BellIcon" size="18"></svg>
+  @if (unreadCount()) { <span class="bell-count">{{ unreadCount() > 9 ? '9+' : unreadCount() }}</span> }
+</button>
+
+@if (open()) {
+  <div class="panel" role="dialog" aria-label="Notifications">
+    <header>
+      <h2>Notifications</h2>
+      @if (unreadCount()) { <button type="button" class="link-btn" (click)="markAllRead()">Mark all as read</button> }
+    </header>
+
+    <ul>
+      @for (n of notices(); track n.key) {
+        <li>
+          <button type="button" class="notice" [class.unread]="n.unread" (click)="view(n)">
+            <span class="dot" aria-hidden="true"></span>
+            <span class="text">
+              <strong>{{ n.title }}</strong>
+              <span>{{ n.detail }}</span>
+              <span>{{ n.visit | date: 'EEE, d MMM' }} · {{ n.time }}</span>
+              <small>{{ n.appointmentId }} · {{ n.at | date: 'd MMM, h:mm a' }}</small>
+            </span>
+          </button>
+        </li>
+      } @empty {
+        <li class="cf-empty">No notifications yet. New appointment requests will appear here.</li>
+      }
+    </ul>
+
+    <footer>
+      <a routerLink="/admin/appointments" [queryParams]="{ status: 'Pending' }" (click)="open.set(false)">View pending requests <svg lucideArrowRight size="16" class="arrow-icon" aria-hidden="true"></svg></a>
+    </footer>
+  </div>
+}

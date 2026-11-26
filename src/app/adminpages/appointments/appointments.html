@@ -1,7 +1,7 @@
 <!-- Page Header -->
 <div class="page-header">
   <h1>Appointment management</h1>
-  <button class="btn-primary" (click)="ui.newAppointment()">+ New appointment</button>
+  <button class="btn-primary" (click)="ui.newAppointment()"><svg lucidePlus size="16" aria-hidden="true"></svg> New appointment</button>
 </div>
 
 <!-- 1. Stat Cards -->
@@ -95,11 +95,11 @@
     <span class="text-muted">{{ rangeLabel() }}</span>
     @if (pageCount() > 1) {
       <div class="pagination">
-        <button class="page-btn" [disabled]="page() <= 1" (click)="page.set(page() - 1)" aria-label="Previous page">&lsaquo;</button>
+        <button class="page-btn" [disabled]="page() <= 1" (click)="page.set(page() - 1)" aria-label="Previous page"><svg lucideChevronLeft size="16" aria-hidden="true"></svg></button>
         @for (p of [].constructor(pageCount()); track $index) {
           <button class="page-btn" [class.active]="page() === $index + 1" (click)="page.set($index + 1)">{{ $index + 1 }}</button>
         }
-        <button class="page-btn" [disabled]="page() >= pageCount()" (click)="page.set(page() + 1)" aria-label="Next page">&rsaquo;</button>
+        <button class="page-btn" [disabled]="page() >= pageCount()" (click)="page.set(page() + 1)" aria-label="Next page"><svg lucideChevronRight size="16" aria-hidden="true"></svg></button>
       </div>
     }
   </div>

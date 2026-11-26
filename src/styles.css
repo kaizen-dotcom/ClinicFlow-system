@@ -373,12 +373,9 @@ button.tab:focus-visible, button.date-item:focus-visible, button.slot:focus-visi
 .cf-toast-success { --toast-color: #16a34a; }
 .cf-toast-error { --toast-color: #dc2626; }
 .cf-toast-info { --toast-color: #2563eb; }
-.cf-toast-icon {
-  display: grid; place-items: center; flex-shrink: 0; width: 20px; height: 20px; border-radius: 50%;
-  background: var(--toast-color); color: #fff; font-size: 12px; font-weight: 700;
-}
+.cf-toast-icon { display: inline-flex; flex-shrink: 0; color: var(--toast-color); }
 .cf-toast-text { flex: 1; }
-.cf-toast-close { border: none; background: none; cursor: pointer; font-size: 1.2rem; line-height: 1; color: var(--text-muted); }
+.cf-toast-close { display: inline-flex; padding: 2px; border: none; background: none; cursor: pointer; color: var(--text-muted); }
 @keyframes toast-in { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: none; } }
 
 /* ---------- Spinner on buttons that are working ---------- */
@@ -457,3 +454,7 @@ app-root .page-content .progress-fill { transition: width 0.5s ease; }
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
   button.is-busy::after { animation: spin 1.4s linear infinite !important; animation-duration: 1.4s !important; animation-iteration-count: infinite !important; }
 }
+
+/* ---------- Icon buttons ---------- */
+.btn-primary svg { flex-shrink: 0; margin-right: 6px; }
+app-root .cf-close, app-root .modal .icon-btn, app-root .page-btn { display: inline-flex; align-items: center; justify-content: center; }

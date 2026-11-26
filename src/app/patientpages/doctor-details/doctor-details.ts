@@ -53,7 +53,7 @@ export class DoctorDetails {
   }
 
   selectedLabel(): string | null {
-    return this.slots().find(s => s.time === this.selectedTime())?.label ?? null;
+    return this.slots().find(s => s.time === this.selectedTime() && s.available)?.label ?? null;
   }
 
   continueToBooking(): void {

@@ -1,7 +1,7 @@
 <!-- Page Header -->
 <div class="page-header">
   <h1>Patient management</h1>
-  <button class="btn-primary" (click)="openAdd()">+ Add patient</button>
+  <button class="btn-primary" (click)="openAdd()"><svg lucidePlus size="16" aria-hidden="true"></svg> Add patient</button>
 </div>
 
 <!-- 1. Stat Cards -->
@@ -77,11 +77,11 @@
     <span class="text-muted">{{ rangeLabel() }}</span>
     @if (pageCount() > 1) {
       <div class="pagination">
-        <button class="page-btn" [disabled]="page() <= 1" (click)="page.set(page() - 1)" aria-label="Previous page">&lsaquo;</button>
+        <button class="page-btn" [disabled]="page() <= 1" (click)="page.set(page() - 1)" aria-label="Previous page"><svg lucideChevronLeft size="16" aria-hidden="true"></svg></button>
         @for (p of [].constructor(pageCount()); track $index) {
           <button class="page-btn" [class.active]="page() === $index + 1" (click)="page.set($index + 1)">{{ $index + 1 }}</button>
         }
-        <button class="page-btn" [disabled]="page() >= pageCount()" (click)="page.set(page() + 1)" aria-label="Next page">&rsaquo;</button>
+        <button class="page-btn" [disabled]="page() >= pageCount()" (click)="page.set(page() + 1)" aria-label="Next page"><svg lucideChevronRight size="16" aria-hidden="true"></svg></button>
       </div>
     }
   </div>
@@ -97,7 +97,7 @@
           <h2 id="pv-title">{{ p.fullName }}</h2>
           <p>{{ p.id }} · registered {{ p.registeredOn | date: 'd MMM y' }}</p>
         </div>
-        <button type="button" class="cf-close" aria-label="Close" (click)="viewingId.set(null)">&times;</button>
+        <button type="button" class="cf-close" aria-label="Close" (click)="viewingId.set(null)"><svg lucideX size="20" aria-hidden="true"></svg></button>
       </header>
       <div class="cf-modal-body">
         @if (panelMessage) { <p class="cf-alert cf-alert-success" role="status">{{ panelMessage }}</p> }
@@ -153,7 +153,7 @@
           <h2 id="pe-title">{{ e.id ? 'Edit patient' : 'Add patient' }}</h2>
           <p>{{ e.id ? e.id : 'Register a patient at the front desk. They can log in with a temporary password.' }}</p>
         </div>
-        <button type="button" class="cf-close" aria-label="Close" (click)="editing = null">&times;</button>
+        <button type="button" class="cf-close" aria-label="Close" (click)="editing = null"><svg lucideX size="20" aria-hidden="true"></svg></button>
       </header>
       <form #pf="ngForm" (ngSubmit)="save(pf)" novalidate>
         <div class="cf-modal-body">

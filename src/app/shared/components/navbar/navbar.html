@@ -7,13 +7,10 @@
   </div>
 
   <div class="nav-right">
+    <app-live-badge />
     <span class="nav-date">{{ today | date: 'EEEE, d MMM y' }}</span>
 
-    <a routerLink="/admin/appointments" [queryParams]="{ status: 'Pending' }" class="bell"
-       [attr.aria-label]="pendingCount() + ' pending requests'" title="Pending requests">
-      <svg [lucideIcon]="BellIcon" size="18"></svg>
-      @if (pendingCount()) { <span class="bell-count">{{ pendingCount() }}</span> }
-    </a>
+    <app-admin-notifications />
 
     <div class="nav-divider"></div>
 

@@ -3,13 +3,14 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { LucideDynamicIcon, LucideChevronDown, LucideMoon, LucideSun, LucideBell, LucideMenu } from '@lucide/angular';
 import { MenuService } from '../../services/menu.service';
+import { LiveBadge } from '../live-badge/live-badge';
 import { ThemeService } from '../../services/theme.service';
 import { PatientAppointmentsService } from '../../services/patient-appointments.service';
 
 @Component({
   selector: 'app-patient-navbar',
   standalone: true,
-  imports: [CommonModule, RouterLink, LucideDynamicIcon],
+  imports: [CommonModule, RouterLink, LucideDynamicIcon, LiveBadge],
   templateUrl: './patient-navbar.html',
   styleUrls: ['./patient-navbar.css']
 })

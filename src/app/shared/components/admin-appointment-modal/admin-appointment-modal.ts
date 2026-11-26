@@ -1,3 +1,4 @@
+import { LucideX } from '@lucide/angular';
 import { ToastService } from '../../services/toast.service';
 import { ChangeDetectorRef, Component, HostListener, computed, effect, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -13,7 +14,7 @@ type Mode = 'view' | 'approve' | 'reject' | 'cancel' | 'complete' | 'noshow' | '
 @Component({
   selector: 'app-admin-appointment-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReschedulePicker],
+  imports: [CommonModule, FormsModule, ReschedulePicker, LucideX],
   templateUrl: './admin-appointment-modal.html',
   styles: [`
     .badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 0.75rem; font-weight: 600; }

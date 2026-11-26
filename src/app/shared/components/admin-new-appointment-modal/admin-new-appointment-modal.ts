@@ -1,3 +1,4 @@
+import { LucideX } from '@lucide/angular';
 import { ToastService } from '../../services/toast.service';
 import { ChangeDetectorRef, Component, HostListener, computed, effect, inject, untracked } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -10,7 +11,7 @@ import { APPOINTMENT_TYPES, Slot } from '../../services/clinic.models';
 @Component({
   selector: 'app-admin-new-appointment-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, LucideX],
   templateUrl: './admin-new-appointment-modal.html'
 })
 export class AdminNewAppointmentModal {
@@ -33,6 +34,12 @@ export class AdminNewAppointmentModal {
   busy = false;
 
   constructor() {
+    // Someone else may take a time while this window is open.
+    effect(() => {
+      this.clinic.schedules(); // changes after every reload
+      untracked(() => this.syncSlots());
+    });
+
     effect(() => {
       if (!this.ui.newAppointmentOpen()) return;
       const patientId = this.ui.newAppointmentPatientId();
@@ -51,6 +58,17 @@ export class AdminNewAppointmentModal {
   onDoctorChange(): void {
     this.dates = this.form.doctorId ? this.clinic.availableDates(this.form.doctorId, 10) : [];
     this.selectDate(this.dates[0] ?? '');
+  }
+
+  /** Redraws the open slots after a live update, keeping the choice if it is still free. */
+  private syncSlots(): void {
+    if (!this.ui.newAppointmentOpen() || this.busy || this.createdId || !this.form.doctorId) return;
+    const chosen = this.form.time;
+    this.dates = this.clinic.availableDates(this.form.doctorId, 10);
+    this.selectDate(this.dates.includes(this.form.date) ? this.form.date : (this.dates[0] ?? ''));
+    if (this.slots.some(s => s.time === chosen && s.available)) this.form.time = chosen;
+    else if (chosen) this.error = 'The time you picked was just taken. Please choose another.';
+    this.cdr.markForCheck();
   }
 
   selectDate(date: string): void {

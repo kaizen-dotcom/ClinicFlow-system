@@ -1,5 +1,5 @@
 import { ToastService } from '../../services/toast.service';
-import { ChangeDetectorRef, Component, OnInit, inject, input, output } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, effect, inject, input, output, untracked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ClinicStore } from '../../services/clinic-store.service';
 import { AppointmentView, Slot } from '../../services/clinic.models';
@@ -52,7 +52,25 @@ export class ReschedulePicker implements OnInit {
   error = '';
   busy = false;
 
+  private ready = false;
+
+  constructor() {
+    // Someone else may take a time while this is open.
+    effect(() => {
+      this.clinic.schedules(); // changes after every reload
+      untracked(() => {
+        if (!this.ready || this.busy) return;
+        const chosen = this.time;
+        this.dates = this.clinic.availableDates(this.appointment().doctorId, 10);
+        this.selectDate(this.dates.includes(this.date) ? this.date : (this.dates[0] ?? ''));
+        if (this.slots.some(s => s.time === chosen && s.available)) this.time = chosen;
+        this.cdr.markForCheck();
+      });
+    });
+  }
+
   ngOnInit(): void {
+    this.ready = true;
     this.dates = this.clinic.availableDates(this.appointment().doctorId, 10);
     this.selectDate(this.dates[0] ?? '');
   }

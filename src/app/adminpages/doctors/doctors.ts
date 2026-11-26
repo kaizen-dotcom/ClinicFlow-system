@@ -1,3 +1,4 @@
+import { LucidePlus, LucideX } from '@lucide/angular';
 import { ToastService } from '../../shared/services/toast.service';
 import { ChangeDetectorRef, Component, HostListener, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -13,7 +14,7 @@ type DoctorForm = Omit<Doctor, 'id'> & { id?: string };
 @Component({
   selector: 'app-doctors',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, LucidePlus, LucideX],
   templateUrl: './doctors.html',
   styleUrl: './doctors.css'
 })

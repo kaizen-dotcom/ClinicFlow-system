@@ -1,7 +1,8 @@
-import { Component, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ClinicStore } from '../../shared/services/clinic-store.service';
 import { MenuService } from '../../shared/services/menu.service';
+import { RealtimeService } from '../../shared/services/realtime.service';
 import { RouterOutlet } from '@angular/router';
 import { SidebarComponent } from '../../shared/components/sidebar/sidebar';
 import { NavbarComponent } from '../../shared/components/navbar/navbar';
@@ -15,7 +16,16 @@ import { AdminNewAppointmentModal } from '../../shared/components/admin-new-appo
   templateUrl: './admin-layout.html',
   styleUrls: ['./admin-layout.css']
 })
-export class AdminLayoutComponent {
+export class AdminLayoutComponent implements OnInit, OnDestroy {
+  private readonly realtime = inject(RealtimeService);
   readonly clinic = inject(ClinicStore);
   readonly menu = inject(MenuService);
+
+  ngOnInit(): void {
+    this.realtime.start();
+  }
+
+  ngOnDestroy(): void {
+    this.realtime.stop();
+  }
 }

@@ -61,6 +61,7 @@ Patients sign up themselves, or are registered at the front desk under **Patient
 | Notifications | `GET /api/notifications`, `POST /api/notifications/{id}/read`, `POST /api/notifications/read-all` (patient) |
 | Admin | `GET/PUT /api/admin/profile` |
 | Clinic | `GET /api/clinic` (public: name and phone) |
+| Live updates | SignalR hub `/hubs/clinic` (signed-in users): sends `changed` after any save; the app then reloads |
 
 Errors are returned as `{ "error": "message" }` with a matching status code (400, 401, 403, 404, 409, 429).
 
